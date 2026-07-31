@@ -28,7 +28,9 @@ class GenResult:
     norm_log: dict[int, float] = field(default_factory=dict)  # per-layer mean ||dh||/||h||
 
 
-def _sample(logits: torch.Tensor, gen: torch.Generator) -> int:
+def _sample(logits: torch.Tensor, gen: torch.Generator | None) -> int:
+    if gen is None:  # greedy (used only by calibration controls, never the main grid)
+        return int(logits.argmax().item())
     logits = logits.float().cpu() / SAMPLING["temperature"]
     topk = logits.topk(SAMPLING["top_k"])
     probs = torch.softmax(topk.values, dim=-1)
@@ -41,11 +43,11 @@ def _sample(logits: torch.Tensor, gen: torch.Generator) -> int:
 
 @torch.no_grad()
 def generate(setup: Setup, prompt: str, max_new_tokens: int, seed: int,
-             ablator: JSpaceAblator | None = None) -> GenResult:
+             ablator: JSpaceAblator | None = None, greedy: bool = False) -> GenResult:
     """Generate under no intervention (ablator=None) or under an installed ablator."""
     tok, hf = setup.tok, setup.hf
     ids = tok(prompt, return_tensors="pt").input_ids.to(setup.device)  # [1, S]
-    gen = torch.Generator().manual_seed(seed)
+    gen = None if greedy else torch.Generator().manual_seed(seed)
     eos = {tok.eos_token_id, tok.convert_tokens_to_ids("<|im_end|>")}
 
     if ablator is None:
