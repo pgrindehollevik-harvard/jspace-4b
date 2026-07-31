@@ -37,9 +37,9 @@ def max_ngram_repetition(token_ids: list[int], n: int = 4) -> float:
     return max(counts.values()) * n / len(token_ids)
 
 
-def grade(dataset: str, gold: str, text: str, token_ids: list[int],
+def grade(dataset: str, gold: str, text: str, repetition: float,
           hit_cap: bool) -> dict:
-    degenerate = max_ngram_repetition(token_ids) > 0.5
+    degenerate = repetition > 0.5
     pred = extract_boxed(text)
     if pred is None and dataset == "gsm8k":  # pre-registered numeric fallback
         nums = LAST_NUMBER.findall(text)
