@@ -79,14 +79,48 @@ def degenerate_rate(setup, problems, ablator) -> tuple[float, float]:
     return degen / len(problems), toks / secs
 
 
-def fisher_exact_p(a_hit, a_n, b_hit, b_n) -> float:
-    """One-sided Fisher exact via hypergeometric tail (no scipy dependency)."""
+def mcnemar_exact_p(hits_a: list[bool], hits_b: list[bool]) -> float:
+    """Exact McNemar (paired, two-sided) on per-item hit lists (deviation 3:
+    replaces the pre-registered unpaired Fisher, which ignores item pairing)."""
     from math import comb
-    total, hits = a_n + b_n, a_hit + b_hit
-    p = 0.0
-    for x in range(a_hit, min(hits, a_n) + 1):
-        p += comb(a_n, x) * comb(b_n, hits - x) / comb(total, hits)
-    return min(p, 1.0)
+    b = sum(1 for x, y in zip(hits_a, hits_b) if x and not y)
+    c = sum(1 for x, y in zip(hits_a, hits_b) if not x and y)
+    n = b + c
+    if n == 0:
+        return 1.0
+    tail = sum(comb(n, x) for x in range(min(b, c) + 1)) / 2 ** n
+    return min(1.0, 2 * tail)
+
+
+def evaluate_rung(setup, items, pilot, wiki, clean_hits, band, k) -> dict:
+    clean_acc = sum(clean_hits) / len(clean_hits)
+    rung = {"band": band, "k": k}
+    hits = {}
+    for mode in ("jspace", "random"):
+        abl = JSpaceAblator(setup, band, k=k, mode=mode).install()
+        try:
+            hits[mode] = multihop_accuracy(setup, items, ablator=abl)
+            rung[f"multihop_{mode}"] = sum(hits[mode]) / len(hits[mode])
+            rung[f"wikitext_top1_{mode}"] = wikitext_top1_match(setup, wiki, abl)
+        finally:
+            abl.remove()
+    abl = JSpaceAblator(setup, band, k=k).install()
+    try:
+        rung["degenerate_rate"], rung["ablated_tok_s"] = degenerate_rate(
+            setup, pilot, abl)
+    finally:
+        abl.remove()
+
+    rung["j_drop"] = clean_acc - rung["multihop_jspace"]
+    rung["r_drop"] = clean_acc - rung["multihop_random"]
+    rung["mcnemar_p_drop"] = mcnemar_exact_p(clean_hits, hits["jspace"])
+    rung["mcnemar_p_j_vs_random"] = mcnemar_exact_p(hits["random"], hits["jspace"])
+    rung["passes_constraints"] = (
+        rung["degenerate_rate"] < 0.10 and rung["wikitext_top1_jspace"] > 0.80)
+    rung["passes_gate"] = (
+        rung["passes_constraints"] and rung["mcnemar_p_drop"] < 0.05
+        and rung["j_drop"] >= 2 * max(rung["r_drop"], 0.0) and rung["j_drop"] > 0)
+    return rung
 
 
 def main():
@@ -95,46 +129,29 @@ def main():
     pilot = load_gsm8k(n=30, seed=100, split="train")
     wiki = load_wikitext_heldout(n=50)
 
-    report = {"clean_multihop": None, "rungs": []}
     clean_hits = multihop_accuracy(setup, items)
     clean_acc = sum(clean_hits) / len(clean_hits)
-    report["clean_multihop"] = clean_acc
+    report = {"clean_multihop": clean_acc, "rungs": []}
     print(f"clean multihop accuracy: {clean_acc:.3f} ({sum(clean_hits)}/{len(clean_hits)})")
 
+    # Prereg section 7: evaluate BOTH primary candidates, choose the one maximizing
+    # the positive-control drop subject to constraints+gate; ladder only if none pass.
     chosen = None
-    for band, k in LADDER:
-        rung = {"band": band, "k": k}
-        for mode in ("jspace", "random"):
-            abl = JSpaceAblator(setup, band, k=k, mode=mode).install()
-            try:
-                hits = multihop_accuracy(setup, items, ablator=abl)
-                rung[f"multihop_{mode}"] = sum(hits) / len(hits)
-            finally:
-                abl.remove()
-        abl = JSpaceAblator(setup, band, k=k).install()
-        try:
-            rung["wikitext_top1"] = wikitext_top1_match(setup, wiki, abl)
-            rung["degenerate_rate"], rung["ablated_tok_s"] = degenerate_rate(
-                setup, pilot, abl)
-        finally:
-            abl.remove()
-
-        j_drop = clean_acc - rung["multihop_jspace"]
-        r_drop = clean_acc - rung["multihop_random"]
-        n = len(items)
-        rung["j_drop"], rung["r_drop"] = j_drop, r_drop
-        rung["fisher_p"] = fisher_exact_p(
-            round(rung["multihop_random"] * n), n, round(rung["multihop_jspace"] * n), n)
-        rung["passes_constraints"] = (
-            rung["degenerate_rate"] < 0.10 and rung["wikitext_top1"] > 0.80)
-        rung["passes_gate"] = (
-            rung["passes_constraints"] and rung["fisher_p"] < 0.05
-            and j_drop >= 2 * max(r_drop, 0.0) and j_drop > 0)
+    for band, k in [(b, core.K_ABLATE) for b in BANDS]:
+        rung = evaluate_rung(setup, items, pilot, wiki, clean_hits, band, k)
         report["rungs"].append(rung)
-        print(json.dumps(rung))
-        if rung["passes_gate"]:
-            chosen = rung
-            break
+        print(json.dumps(rung), flush=True)
+    passing = [r for r in report["rungs"] if r["passes_gate"]]
+    if passing:
+        chosen = max(passing, key=lambda r: r["j_drop"])
+    else:
+        for band, k in [(BANDS[0], 5), (core.BAND_LIGHT, core.K_ABLATE)]:
+            rung = evaluate_rung(setup, items, pilot, wiki, clean_hits, band, k)
+            report["rungs"].append(rung)
+            print(json.dumps(rung), flush=True)
+            if rung["passes_gate"]:
+                chosen = rung
+                break
 
     report["chosen"] = chosen
     report["stop_gate"] = "PASS" if chosen else "FAIL"

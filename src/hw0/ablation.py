@@ -72,6 +72,13 @@ class JSpaceAblator:
     def __exit__(self, *exc):
         self.remove()
 
+    def reseed(self, seed: int):
+        """Pin the per-generation random-direction index stream so every random-arm
+        generation is reproducible from (problem_id, seed_idx) alone, independent of
+        execution order and resume points. The direction bank itself is fixed at
+        construction and unaffected."""
+        self._rng.manual_seed(seed)
+
     def pop_norm_summary(self) -> dict[int, float]:
         """Mean ||delta_h||/||h|| per layer since the last call. Syncs once."""
         out = {l: (self._norm_sum[l] / max(self._norm_cnt[l], 1)).item()
@@ -111,8 +118,11 @@ class JSpaceAblator:
         # Directions for ALL top-k, exempt ones zeroed out of the projection basis:
         # a zero row contributes nothing to span/solve (with regularization), so the
         # whole batch of positions runs as one padded einsum + batched 10x10 solve.
+        # bf16 matmul against the resident J (a per-call J.float() would materialize a
+        # fresh 26 MB fp32 matrix per band layer per forward); upcast only the small
+        # [S, k, d] result for the fp32 solve.
         w = self.setup.lm_head.weight[top_ids] * self._gamma             # [S, k, d]
-        V = (w.float() @ J.float())                                      # [S, k, d]
+        V = (w @ J).float()                                              # [S, k, d]
         V = V * (~exempt_mask).unsqueeze(-1)
         hs = h[0].float()                                                # [S, d]
         c = torch.einsum("skd,sd->sk", V, hs)                            # [S, k]

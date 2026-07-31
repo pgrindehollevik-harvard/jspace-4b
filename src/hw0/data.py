@@ -4,8 +4,8 @@ Every item: {"id", "dataset", "problem", "answer", "level"} with answer as a str
 Sampling is seeded and deterministic; GSM8K pilot problems come from the TRAIN split.
 """
 
+import itertools
 import random
-import re
 
 from datasets import load_dataset
 
@@ -32,14 +32,16 @@ def load_math500(per_level=30, seed=0):
     by_level = {}
     for i, row in enumerate(ds):
         by_level.setdefault(row["level"], []).append(i)
-    items = []
+    groups = []
     for level in sorted(by_level):
         take = random.Random(seed + level).sample(by_level[level],
                                                   min(per_level, len(by_level[level])))
-        items += [{"id": f"math500-{ds[i]['unique_id']}", "dataset": "math500",
-                   "level": level, "problem": ds[i]["problem"], "answer": ds[i]["answer"]}
-                  for i in take]
-    return items
+        groups.append([{"id": f"math500-{ds[i]['unique_id']}", "dataset": "math500",
+                        "level": level, "problem": ds[i]["problem"],
+                        "answer": ds[i]["answer"]} for i in take])
+    # Round-robin across levels so every prefix (the n=100 random arm, trim-ladder
+    # n=125/75, and any interrupted run) is level-balanced; see DEVIATIONS.md entry 2.
+    return [x for tier in itertools.zip_longest(*groups) for x in tier if x is not None]
 
 
 def load_aime():

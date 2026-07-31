@@ -51,8 +51,9 @@ def grade(dataset: str, gold: str, text: str, repetition: float,
         return {"correct": False, "pred": None, "class": cls}
 
     if dataset == "aime":
-        try:
-            ok = int(float(pred.replace(",", ""))) == int(gold)
+        try:  # AIME golds are integers 0-999; a non-integer prediction is wrong,
+            v = float(pred.replace(",", ""))  # not truncated into a match
+            ok = v.is_integer() and int(v) == int(gold)
         except ValueError:
             ok = False
     else:

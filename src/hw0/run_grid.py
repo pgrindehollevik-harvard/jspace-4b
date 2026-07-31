@@ -16,7 +16,11 @@ The band/k come from results/calibration.json unless overridden.
 import argparse
 import json
 import os
+import sys
 import time
+import traceback
+
+import torch
 
 from hw0 import core
 from hw0.ablation import JSpaceAblator
@@ -61,16 +65,28 @@ def seed_for(problem_id: str, seed_idx: int) -> int:
     return zlib.crc32(f"{problem_id}#{seed_idx}".encode()) % (2**31)
 
 
-def done_keys(path: str) -> set:
+def done_keys(path: str, band, k) -> set:
+    """Collect completed keys; repair a torn final line; refuse mixed ablation settings."""
     keys = set()
-    if os.path.exists(path):
-        with open(path) as f:
-            for line in f:
-                try:
-                    r = json.loads(line)
-                    keys.add((r["cell"], r["problem_id"], r["seed_idx"]))
-                except json.JSONDecodeError:
-                    continue  # torn write from an interrupted run; will be redone
+    if not os.path.exists(path):
+        return keys
+    good = []
+    with open(path) as f:
+        for line in f:
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:
+                continue  # torn write from an interrupted run; dropped and redone
+            if r["condition"] in ("jspace", "random") and (tuple(r["band"]) != band
+                                                           or r["k"] != k):
+                raise SystemExit(
+                    f"grid.jsonl contains records with band={r['band']} k={r['k']} but "
+                    f"the current calibration chose band={band} k={k}; refusing to mix. "
+                    f"Move results/grid.jsonl aside before rerunning.")
+            good.append(line)
+            keys.add((r["cell"], r["problem_id"], r["seed_idx"]))
+    with open(path, "w") as f:  # rewrite without any torn line so appends stay clean
+        f.writelines(good)
     return keys
 
 
@@ -91,7 +107,7 @@ def main():
 
     setup = core.load()
     problems = load_problems()
-    done = done_keys(OUT)
+    done = done_keys(OUT, band, k)
     print(f"{len(done)} generations already recorded")
 
     ablators = {
@@ -117,14 +133,35 @@ def main():
                     if key in done:
                         continue
                     abl = ablators[condition]
-                    if abl is not None and not abl._handles:
-                        abl.install()
                     prompt = core.chat_prompt(setup, p["problem"], mode)
                     t0 = time.time()
-                    r = generate(setup, prompt, max_new_tokens=CAPS[(ds, mode)],
-                                 seed=seed_for(p["id"], s), ablator=abl)
-                    if abl is not None:
-                        abl.remove()
+                    # One transient MPS error must not kill a 24h unattended run:
+                    # retry once with full teardown, then skip (the absent key makes
+                    # a later restart redo it).
+                    r = None
+                    for attempt in (0, 1):
+                        try:
+                            if abl is not None:
+                                abl.install()
+                                if abl.mode == "random":
+                                    abl.reseed(seed_for(p["id"], s * 7919 + 1))
+                            r = generate(setup, prompt,
+                                         max_new_tokens=CAPS[(ds, mode)],
+                                         seed=seed_for(p["id"], s), ablator=abl)
+                            break
+                        except Exception:
+                            print(f"FAIL {key} attempt {attempt}", file=sys.stderr)
+                            traceback.print_exc()
+                            if abl is not None:
+                                abl.enabled = False
+                                abl.pop_norm_summary()
+                            torch.mps.empty_cache()
+                            time.sleep(10)
+                        finally:
+                            if abl is not None:
+                                abl.remove()
+                    if r is None:
+                        continue
                     rec = {"cell": key[0], "dataset": ds, "mode": mode,
                            "condition": condition, "problem_id": p["id"],
                            "seed_idx": s, "level": p["level"], "gold": p["answer"],

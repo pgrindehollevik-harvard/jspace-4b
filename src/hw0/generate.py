@@ -28,6 +28,13 @@ class GenResult:
     norm_log: dict[int, float] = field(default_factory=dict)  # per-layer mean ||dh||/||h||
 
 
+def _eos_ids(tok) -> set[int]:
+    # Qwen3 registers two EOS ids: <|im_end|> (151645) and <|endoftext|> (151643).
+    ids = {tok.eos_token_id, tok.convert_tokens_to_ids("<|im_end|>"),
+           tok.convert_tokens_to_ids("<|endoftext|>")}
+    return {t for t in ids if t is not None}
+
+
 def _sample(logits: torch.Tensor, gen: torch.Generator | None) -> int:
     if gen is None:  # greedy (used only by calibration controls, never the main grid)
         return int(logits.argmax().item())
@@ -48,40 +55,42 @@ def generate(setup: Setup, prompt: str, max_new_tokens: int, seed: int,
     tok, hf = setup.tok, setup.hf
     ids = tok(prompt, return_tensors="pt").input_ids.to(setup.device)  # [1, S]
     gen = None if greedy else torch.Generator().manual_seed(seed)
-    eos = {tok.eos_token_id, tok.convert_tokens_to_ids("<|im_end|>")}
+    eos = _eos_ids(tok)
 
     if ablator is None:
         return _generate_single(setup, ids, max_new_tokens, gen, eos)
 
     main_cache, clean_cache = DynamicCache(), DynamicCache()
-
-    # Clean prefill (hooks silent): top-10 next-token ids at every prompt position.
-    ablator.enabled = False
-    out = hf(ids, past_key_values=clean_cache, use_cache=True)
-    clean_top = out.logits[0].topk(K_CLEAN_EXEMPT, dim=-1).indices     # [S, 10]
-
-    # Intervened prefill over the same prompt.
-    ablator.exempt_ids = clean_top
-    ablator.enabled = True
-    out = hf(ids, past_key_values=main_cache, use_cache=True)
-    ablator.enabled = False
-
     new_ids: list[int] = []
-    next_id = _sample(out.logits[0, -1], gen)
-    for _ in range(max_new_tokens):
-        new_ids.append(next_id)
-        if next_id in eos:
-            break
-        step = torch.tensor([[next_id]], device=setup.device)
-        # Clean stream consumes the sampled token first -> exemptions for this position.
-        out_c = hf(step, past_key_values=clean_cache, use_cache=True)
-        ablator.exempt_ids = out_c.logits[0].topk(K_CLEAN_EXEMPT, dim=-1).indices  # [1, 10]
-        ablator.enabled = True
-        out = hf(step, past_key_values=main_cache, use_cache=True)
+    try:
+        # Clean prefill (hooks silent): top-10 next-token ids at every prompt position.
         ablator.enabled = False
-        next_id = _sample(out.logits[0, -1], gen)
+        out = hf(ids, past_key_values=clean_cache, use_cache=True)
+        clean_top = out.logits[0].topk(K_CLEAN_EXEMPT, dim=-1).indices     # [S, 10]
 
-    return _result(setup, ids, new_ids, max_new_tokens, ablator)
+        # Intervened prefill over the same prompt.
+        ablator.exempt_ids = clean_top
+        ablator.enabled = True
+        out = hf(ids, past_key_values=main_cache, use_cache=True)
+        ablator.enabled = False
+
+        next_id = _sample(out.logits[0, -1], gen)
+        while True:
+            new_ids.append(next_id)
+            if next_id in eos or len(new_ids) >= max_new_tokens:
+                break
+            step = torch.tensor([[next_id]], device=setup.device)
+            # Clean stream consumes the sampled token first -> exemptions for this position.
+            out_c = hf(step, past_key_values=clean_cache, use_cache=True)
+            ablator.exempt_ids = out_c.logits[0].topk(K_CLEAN_EXEMPT, dim=-1).indices
+            ablator.enabled = True
+            out = hf(step, past_key_values=main_cache, use_cache=True)
+            ablator.enabled = False
+            next_id = _sample(out.logits[0, -1], gen)
+    finally:
+        ablator.enabled = False  # never leak an enabled hook to a later (clean) forward
+
+    return _result(setup, new_ids, max_new_tokens, ablator, eos)
 
 
 def _generate_single(setup, ids, max_new_tokens, gen, eos):
@@ -89,24 +98,23 @@ def _generate_single(setup, ids, max_new_tokens, gen, eos):
     out = setup.hf(ids, past_key_values=cache, use_cache=True)
     new_ids: list[int] = []
     next_id = _sample(out.logits[0, -1], gen)
-    for _ in range(max_new_tokens):
+    while True:
         new_ids.append(next_id)
-        if next_id in eos:
+        if next_id in eos or len(new_ids) >= max_new_tokens:
             break
         step = torch.tensor([[next_id]], device=setup.device)
         out = setup.hf(step, past_key_values=cache, use_cache=True)
         next_id = _sample(out.logits[0, -1], gen)
-    return _result(setup, ids, new_ids, max_new_tokens, None)
+    return _result(setup, new_ids, max_new_tokens, None, eos)
 
 
-def _result(setup, ids, new_ids, cap, ablator):
-    stop = new_ids[-1] in {setup.tok.eos_token_id,
-                           setup.tok.convert_tokens_to_ids("<|im_end|>")} if new_ids else False
+def _result(setup, new_ids, cap, ablator, eos):
+    stopped = bool(new_ids) and new_ids[-1] in eos
     norm_log = ablator.pop_norm_summary() if ablator is not None else {}
     return GenResult(
         text=setup.tok.decode(new_ids, skip_special_tokens=True),
         token_ids=new_ids,
         n_new=len(new_ids),
-        hit_cap=len(new_ids) >= cap and not stop,
+        hit_cap=len(new_ids) >= cap and not stopped,
         norm_log=norm_log,
     )

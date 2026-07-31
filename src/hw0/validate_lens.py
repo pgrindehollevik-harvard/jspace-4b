@@ -47,12 +47,14 @@ def synonyms(inter: str) -> list[str]:
 
 
 def single_token_ids(tok, words: list[str]) -> list[int]:
-    """First-token ids of each surface form (with/without leading space, capitalized)."""
+    """Ids of surface forms that are GENUINELY single tokens (with/without leading
+    space, capitalized). Multi-token forms are excluded per the single-token protocol —
+    crediting a first fragment would reward e.g. 'mult' for 'multiplication'."""
     ids = set()
     for w in words:
         for v in (w, " " + w, w.capitalize(), " " + w.capitalize()):
             enc = tok.encode(v, add_special_tokens=False)
-            if len(enc) >= 1:
+            if len(enc) == 1:
                 ids.add(enc[0])
     return sorted(ids)
 

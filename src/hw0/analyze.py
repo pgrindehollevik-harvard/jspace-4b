@@ -28,7 +28,10 @@ def grade_all():
     graded = []
     with open(GRID) as f:
         for line in f:
-            r = json.loads(line)
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:
+                continue  # torn write from an interrupted run; the runner redoes it
             g = grade(r["dataset"], r["gold"], r["text"], r.get("repetition", 0.0),
                       r["hit_cap"])
             r.update(g)
@@ -53,20 +56,32 @@ def acc(cell):
 
 
 def boot_ci(fn, tables, n=N_BOOT):
-    """Problem-level cluster bootstrap over the union of problem ids."""
+    """Problem-level cluster bootstrap over the union of problem ids.
+
+    Resampled instances are keyed by draw index so multiplicity is honored (a problem
+    drawn m times appears under m distinct keys) while the same draw still maps to the
+    same problem in every table — pairing survives, duplicates count.
+    """
     ids = sorted(set().union(*[set(t) for t in tables]))
     stats = []
     for _ in range(n):
         take = RNG.choice(len(ids), len(ids), replace=True)
         sampled = [ids[i] for i in take]
-        stats.append(fn([{p: t[p] for p in sampled if p in t} for t in tables]))
+        stats.append(fn([{i: t[p] for i, p in enumerate(sampled) if p in t}
+                         for t in tables]))
     lo, hi = np.nanpercentile(stats, [2.5, 97.5])
     return [float(lo), float(hi)]
 
 
 def retention(tables):
+    """Paired retention: both accuracies computed over the problems present in BOTH
+    tables, so a smaller ablated arm is compared against its own clean subset."""
     clean, abl = tables
-    a_clean, a_abl = acc(clean), acc(abl)
+    shared = [p for p in clean if p in abl]
+    if not shared:
+        return float("nan")
+    a_clean = float(np.mean([clean[p] for p in shared]))
+    a_abl = float(np.mean([abl[p] for p in shared]))
     return a_abl / a_clean if a_clean > 0 else float("nan")
 
 
@@ -82,6 +97,51 @@ def p_d(tables):
     (cc, cj, dc, dj, ccr, cr, dcr, dr) = tables
     return (retention([cc, cj]) - retention([dc, dj])) - (
         retention([ccr, cr]) - retention([dcr, dr]))
+
+
+def p_d_abs(tables):
+    """Co-primary absolute-point DiD (prereg 8): same structure as p_d but with
+    accuracy differences instead of ratios (floor-insensitive)."""
+    (cc, cj, dc, dj, ccr, cr, dcr, dr) = tables
+
+    def diff(clean, abl):
+        shared = [p for p in clean if p in abl]
+        if not shared:
+            return float("nan")
+        return float(np.mean([abl[p] for p in shared])) - float(
+            np.mean([clean[p] for p in shared]))
+
+    return (diff(cc, cj) - diff(dc, dj)) - (diff(ccr, cr) - diff(dcr, dr))
+
+
+def mcnemar_exact(clean, abl):
+    """Exact McNemar p for clean-vs-ablated at problem level (prereg 8, the AIME
+    endpoint of record). Problem counts as correct if >= half its seeds are."""
+    from math import comb
+    shared = [p for p in clean if p in abl]
+    b = sum(1 for p in shared if clean[p] >= 0.5 and abl[p] < 0.5)
+    c = sum(1 for p in shared if clean[p] < 0.5 and abl[p] >= 0.5)
+    n = b + c
+    if n == 0:
+        return 1.0
+    tail = sum(comb(n, x) for x in range(min(b, c) + 1)) / 2 ** n
+    return min(1.0, 2 * tail)
+
+
+def boot_ci_2strata(fn, tables_a, tables_b, n=N_BOOT):
+    """Stratified cluster bootstrap for cross-dataset contrasts: resample each
+    dataset's problems independently, preserving per-dataset sample sizes."""
+    ids_a = sorted(set().union(*[set(t) for t in tables_a]))
+    ids_b = sorted(set().union(*[set(t) for t in tables_b]))
+    stats = []
+    for _ in range(n):
+        sa = [ids_a[i] for i in RNG.choice(len(ids_a), len(ids_a), replace=True)]
+        sb = [ids_b[i] for i in RNG.choice(len(ids_b), len(ids_b), replace=True)]
+        ta = [{i: t[p] for i, p in enumerate(sa) if p in t} for t in tables_a]
+        tb = [{i: t[p] for i, p in enumerate(sb) if p in t} for t in tables_b]
+        stats.append(fn(ta + tb))
+    lo, hi = np.nanpercentile(stats, [2.5, 97.5])
+    return [float(lo), float(hi)]
 
 
 def main():
@@ -113,20 +173,25 @@ def main():
                 summary["survival"][key] = {
                     "value": survival([clean, cell]),
                     "ci": boot_ci(survival, [clean, cell]),
+                    "mcnemar_p": mcnemar_exact(clean, cell),
                 }
         needed = [f"{ds}-cot-clean", f"{ds}-cot-jspace", f"{ds}-direct-clean",
                   f"{ds}-direct-jspace", f"{ds}-cot-clean", f"{ds}-cot-random",
                   f"{ds}-direct-clean", f"{ds}-direct-random"]
         if all(cells.get(c) for c in needed):
             tabs = [cells[c] for c in needed]
-            floored = acc(cells[f"{ds}-direct-clean"]) < FLOOR
+            # Floor rule (prereg 8) on BOTH clean denominators of the ratio estimand.
+            floored = (acc(cells[f"{ds}-direct-clean"]) < FLOOR
+                       or acc(cells[f"{ds}-cot-clean"]) < FLOOR)
             summary["p_d"][ds] = {
                 "value": p_d(tabs) if not floored else None,
                 "ci": boot_ci(p_d, tabs) if not floored else None,
+                "abs_did": p_d_abs(tabs),
+                "abs_did_ci": boot_ci(p_d_abs, tabs),
                 "floor_excluded": floored,
             }
 
-    # H2 primary contrast (prereg 8): P_D(gsm8k) - P_D(math500).
+    # H2 primary contrast (prereg 8): P_D(gsm8k) - P_D(math500), stratified bootstrap.
     if all(ds in summary["p_d"] and summary["p_d"][ds]["value"] is not None
            for ds in ("gsm8k", "math500")):
         needed = lambda ds: [f"{ds}-cot-clean", f"{ds}-cot-jspace", f"{ds}-direct-clean",
@@ -138,8 +203,32 @@ def main():
             return p_d(tables[:8]) - p_d(tables[8:])
         summary["h2_primary"] = {
             "value": contrast(g + m),
-            "ci": boot_ci(contrast, g + m),
+            "ci": boot_ci_2strata(contrast, g, m),
         }
+
+    # Within-MATH-500 level 1-5 gradient (prereg 6.5): format-constant difficulty axis.
+    levels = {r["problem_id"]: r["level"] for r in graded if r["dataset"] == "math500"}
+    grad = {}
+    for lv in sorted(set(levels.values())):
+        sub = lambda cell: {p: v for p, v in cells.get(cell, {}).items()
+                            if levels.get(p) == lv}
+        clean, abl = sub("math500-cot-clean"), sub("math500-cot-jspace")
+        if clean and abl and acc(clean) >= FLOOR:
+            grad[lv] = {"value": retention([clean, abl]),
+                        "ci": boot_ci(retention, [clean, abl])}
+    summary["math_gradient_cot_jspace"] = grad
+
+    # Direct-compliance audit + CoT length distribution (prereg 6.6, 8).
+    lengths, compliance = defaultdict(list), defaultdict(list)
+    for r in graded:
+        lengths[r["cell"]].append(r["n_new"])
+        if r["mode"] == "direct":
+            compliance[r["cell"]].append(r["n_new"] <= 40)
+    summary["cot_length_mean"] = {c: float(np.mean(v)) for c, v in lengths.items()
+                                  if "-cot-" in c}
+    summary["direct_compliance"] = {c: float(np.mean(v)) for c, v in compliance.items()}
+    # TODO(analysis pass): logistic trend model correct ~ mode x condition x difficulty
+    # with problem-clustered SEs (statsmodels), and retention-vs-CoT-length covariate.
 
     os.makedirs(FIGDIR, exist_ok=True)
     _headline_figure(summary)
