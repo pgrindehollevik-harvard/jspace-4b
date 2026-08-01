@@ -10,6 +10,8 @@ dependencies = [
     "math-verify[antlr4_13_2]",
     "matplotlib",
     "huggingface_hub",
+    "statsmodels",
+    "pytest",
 ]
 
 [build-system]

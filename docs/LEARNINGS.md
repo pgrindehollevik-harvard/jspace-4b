@@ -53,7 +53,7 @@ this can genuinely explain every choice. Final version completed after the resul
   (norm-matched random damage costs 0.0 points). **The lens finds causally load-bearing
   directions.**
 - But *selectivity* failed everywhere: 34–42% of ordinary next-token predictions change
-  under J-ablation (vs 16–27% under matched random; paper: "only mildly perturbed").
+  under J-ablation (vs 16–27% under matched random; the paper finds ablation leaves "the bulk of ordinary text prediction intact").
   On a small model, verbalizable directions are entangled with ordinary prediction.
 - Two candidate readings, distinguishable by the pre-registered refit: (a) small models
   route routine prediction *through* their workspace (a scaling claim about the

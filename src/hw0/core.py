@@ -31,6 +31,17 @@ COT_INSTRUCTION = "Please reason step by step, and put your final answer within 
 DIRECT_INSTRUCTION = "Give only the final answer within \\boxed{}. Do not show any working."
 
 
+def jlens_data_dir() -> str:
+    """Companion-repo clone location: vendor/ (per README setup) with a fallback to
+    the .context/ clone used during development."""
+    import os
+    for p in ("vendor/jacobian-lens", ".context/jacobian-lens"):
+        if os.path.isdir(p):
+            return p
+    raise FileNotFoundError(
+        "clone https://github.com/anthropics/jacobian-lens into vendor/ (see README)")
+
+
 @dataclass
 class Setup:
     hf: transformers.PreTrainedModel

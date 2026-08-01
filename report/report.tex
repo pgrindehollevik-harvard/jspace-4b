@@ -1,5 +1,6 @@
 \documentclass[10pt]{article}
 \usepackage[margin=0.75in]{geometry}
+\usepackage{lmodern}
 \usepackage{booktabs,graphicx,amsmath,microtype}
 \usepackage[hidelinks]{hyperref}
 \usepackage{titlesec}
@@ -22,7 +23,8 @@ more robust to this ablation than the same problems answered directly. We tested
 that protection persists as problems get harder, on \texttt{Qwen/Qwen3-4B}.
 \textbf{H1} (replication): on GSM8K the random-differenced protection
 $P_D=[R(\text{CoT},J)-R(\text{dir},J)]-[R(\text{CoT},\text{rand})-R(\text{dir},\text{rand})]$
-is $\ge +0.15$, where $R$ = accuracy retention (ablated/clean).
+is positive (predicted magnitude $\ge +0.15$), where $R$ = accuracy retention
+(ablated/clean).
 \textbf{H2} (extension): protection \emph{erodes} with difficulty
 (GSM8K $\to$ MATH-500 $\to$ AIME; within MATH-500, levels 1$\to$5), because
 externalization is bandwidth-limited: each step of a harder problem itself needs more
@@ -40,8 +42,9 @@ so anything surviving the $P_D$ subtraction is J-space-specific rather than gene
 damage. Before the main grid may run, a hypothesis-blind stop-gate requires: a
 significant positive-control drop under J-ablation (exact McNemar), $\ge 2\times$ the
 matched-random drop, output degeneration $<10\%$, and ordinary next-token prediction
-on held-out wikitext surviving ($>0.80$ top-1 agreement with clean) --- the paper's
-selectivity signature. Strength (layer band, $k$) is calibrated \emph{only} on these
+on held-out wikitext surviving ($>0.80$ top-1 agreement with clean; our pre-registered
+quantification of the paper's selectivity finding, whose exact values appear only in
+its Fig.~22 graphic). Strength (layer band, $k$) is calibrated \emph{only} on these
 criteria, never on CoT-vs-direct gaps.
 
 \section{Experimental details}
@@ -53,11 +56,13 @@ directions $v_t=J_\ell^{\top}(\gamma\odot W_U[t])$, joint projection removed by
 regularized batched solve. Ablation applies to prompt and every generated token.
 Pre-fitted lens: \texttt{neuronpedia/jacobian-lens} (fit on this exact checkpoint);
 it beats a logit-lens baseline at ranking silent multi-hop intermediates
-(pass@5 $0.41$ vs $0.37$; pass@1 $0.20$ vs $0.19$), validating it before use.
+(pass@5 $0.41$ vs $0.37$; pass@1 $0.20$ vs $0.19$) though not on arithmetic
+order-of-operations readouts at rank 1 --- the pre-registered gate (win on either eval)
+passed before use.
 Percent-depth transfer of the paper's Sonnet band gives candidates
 $\{14\text{--}24, 14\text{--}31\}$ of 36 blocks (light $=14$--$19$).
-Compute: one M4 Pro (48 GB, MPS), 19.3 tok/s clean, 6.2--6.6 tok/s ablated
-(dual streams + per-layer readouts). Runs are chunk-resumable (64-token persistence):
+Compute: one M4 Pro (48 GB, MPS); ablated decode 3.4--7.2 tok/s across calibration
+rungs, median ${\approx}6$ (dual streams + per-layer readouts). Runs are chunk-resumable (64-token persistence):
 macOS update preparation repeatedly SIGKILLed the process (90 s lifetimes at the worst),
 which cost wall-clock but, by construction, no data. Grading: \texttt{math-verify} on the
 last \verb|\boxed{}|; artifact classes (no-answer / truncation / degeneration /
@@ -65,9 +70,12 @@ wrong-answer) tracked separately. 7 unit tests certify the intervention (identit
 disabled, projections verifiably removed, exemption honored, per-slot norm match,
 seeded determinism, chunked $=$ unchunked).
 
-\section{Results}
-\textbf{Positive-control calibration (order-ops fallback; clean multihop was 0.42,
-far from ceiling --- itself a small-model datum).} All four pre-registered rungs
+\section{Experimental results}
+\textbf{Positive-control calibration.} The paper's control (``multihop'': silent
+two-hop factual composition, e.g.\ legs of the animal that spins webs) proved unusable
+--- clean Qwen3-4B scores only 0.42, itself a small-model datum --- so the pre-registered
+fallback control (``order-ops'': arithmetic order-of-operations completions, clean 0.745)
+was used. All four pre-registered rungs
 \emph{failed} the stop-gate, so the main grid did not run on the off-the-shelf lens:
 
 \begin{center}\small
@@ -77,31 +85,35 @@ Rung & J drop (pts) & random drop & wikitext top-1 (J / rand) & gate\\
 \midrule
 14--24, $k{=}10$ & $-16.4$ ($p{=}.004$) & $-9.1$ & $0.62\,/\,0.79$ & fail\\
 14--31, $k{=}10$ & $-18.2$ & $-9.1$ & $0.58\,/\,0.73$ & fail\\
-14--24, $k{=}5$ & $-14.5$ & $-5.4$ & $0.61\,/\,0.82$ & fail\\
+14--24, $k{=}5$ & $-14.5$ & $-5.5$ & $0.61\,/\,0.82$ & fail\\
 14--19, $k{=}10$ (light) & $-16.4$ ($p{=}.012$) & $\phantom{-}0.0$ & $0.66\,/\,0.84$ & fail\\
 \bottomrule
 \end{tabular}
 \end{center}
 
 The J-directions are causally real on Qwen3-4B --- in the light band, norm-matched
-random damage costs \emph{nothing} while J-ablation costs 16 points, with only 3\%
-degeneration --- but they are not \emph{selective}: 34--42\% of ordinary next-token
-predictions change (paper: ``only mildly perturbed'' on Sonnet 4.5). Per the
+random damage costs \emph{nothing} while J-ablation costs 16 points ($n{=}55$ paired
+items, exact McNemar $p{=}.012$; degeneration 3\%) --- but they are not \emph{selective}: 34--42\% of ordinary next-token
+predictions change, where the paper finds ablation leaves ``the bulk of ordinary
+text prediction intact'' (\S3.5.2). Per the
 pre-registered contingency (the stock lens targets the final layer; the paper's recipe
 targets the penultimate layer to avoid last-block artifacts), we refit a
 penultimate-target lens (n=32 prompts; 17\,h of MPS backward passes made the registered
 $n{\approx}100$ infeasible --- deviation 4, with its interpretation constraint committed
 \emph{before} the re-run) and re-ran the ladder. All four rungs failed again, in a
 diagnostic pattern: the refit lens's ``J-directions'' behaved \emph{identically to the
-random control} (drops $10.9$ vs $10.9$; $14.5$ vs $12.7$), and selectivity worsened
-(0.45--0.68). An undertrained lens converges to random-control behavior --- which
-corroborates that the stock lens's J-vs-random differential reflects real structure.
+random control} (drops $10.9$ vs $10.9$; $14.5$ vs $12.7$), while selectivity
+worsened at the $k{=}10$ rungs (0.45--0.56) and stayed comparable at the gentler rungs
+(0.62--0.68) --- nowhere near the 0.80 gate. This pattern is consistent with estimation
+noise dominating the small fit, which would corroborate the stock lens's J-vs-random
+differential as real structure; deviation 4's registered confound means we treat this
+reading as suggestive rather than established.
 
 \begin{center}
 \includegraphics[width=\linewidth]{../results/figures/ladder.pdf}
 \end{center}
 
-\section{Analysis}
+\section{Analysis of results}
 \textbf{Verdict.} H1/H2 are unanswerable as posed on this model: the pre-registered
 precondition for interpreting a CoT-vs-direct comparison --- an ablation that is
 J-specific \emph{and} spares ordinary prediction --- was not achievable at any of eight
@@ -121,7 +133,8 @@ general-prediction components. Our refit could not adjudicate (b) at a feasible 
 size --- reported as unresolved, not refuted. \textbf{Next with more compute:} the same
 pre-registered grid on Qwen3-14B/32B (pre-fitted lenses exist), where reading (a)
 predicts the gate passes and (b) predicts it keeps failing; a full-budget penultimate
-lens; and thinking-mode traces. All code, prompts, seeds, per-generation records, and
-this pipeline's crash-tolerant infrastructure are in the repository for exact reuse.
+lens; and thinking-mode traces. All code, prompts, seeds, the full 8-rung calibration
+records (including per-item outcomes), and the crash-tolerant pipeline are in the
+repository for exact reuse; the main grid's records intentionally do not exist.
 
 \end{document}

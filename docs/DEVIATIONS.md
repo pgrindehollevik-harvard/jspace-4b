@@ -48,7 +48,12 @@ mid-flight by a laptop crash with no results written). The ≥2× drop-ratio rul
 prompts") ran with n=32.
 
 **Why:** measured fit throughput on MPS was 10.6 min/prompt (dim_batch=16); 100 prompts
-would take ~17h against an Aug 5 deadline. The paper reports lens quality beating the
+would take ~17h, which — with the ladder re-run and a possible main grid still pending —
+does not fit inside the pre-registered ~48h total compute cap (prereg section 9).
+Ordering, for the record: the n=32 decision was made and committed (with rationale in
+the commit message) when the fit was relaunched at ~21:30 on Jul 31; this entry
+formalized it after the fit's validation and before the pen ladder produced any rung
+results. The paper reports lens quality beating the
 logit lens from ~10 prompts. Validation of the resulting lens: it passes the lens gate on
 multihop (pass@1 0.204 vs 0.183; pass@5 0.366 vs 0.353) but with thinner margins than the
 stock n=479 lens and clearly worse order-ops readout — the n=32 fit is undertrained
@@ -58,3 +63,19 @@ penultimate-target hypothesis; only a marked selectivity IMPROVEMENT is strong e
 (for the final-layer-artifact explanation), and a flat/worse result leaves the
 explanation candidate unresolved rather than refuted. The fit checkpoint is retained so
 the fit can be extended if the selectivity direction warrants it.
+
+
+## 5. Pre-registered band diagnostics never attempted (2026-08-01)
+
+**What changed:** prereg section 5.6 committed to attempting the paper's section-4.1
+band diagnostics (time-boxed 4h) before falling back to percent-depth transfer. The
+diagnostics were never run; the percent-depth candidates {14-24, 14-31} were used
+directly.
+
+**Why (honest accounting):** under repeated process kills and deadline pressure the
+time-box was spent on crash-tolerance engineering instead, and the registered fallback
+was adopted immediately. Impact assessment: the ladder evaluated two band widths plus a
+light band and k=5, and the selectivity failure was consistent across all of them
+(0.45-0.68 vs the 0.80 gate) — it is unlikely that a diagnostics-derived band within the
+same mid-network region would have changed the verdict, but this remains an untested
+assumption and is flagged as such in the report's residual-confounds discussion.

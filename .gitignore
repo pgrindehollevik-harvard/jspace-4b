@@ -7,4 +7,5 @@ __pycache__/
 checkpoints/
 logs/
 results/partials/
-results/lens_fit/ckpt.pt
+results/lens_fit/
+*.tmp.*

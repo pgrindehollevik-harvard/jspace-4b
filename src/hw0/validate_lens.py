@@ -20,8 +20,12 @@ import torch
 
 from hw0 import core
 
-ORDER_OPS = ".context/jacobian-lens/data/evaluations/lens-eval-order-ops.json"
-MULTIHOP = ".context/jacobian-lens/data/evaluations/lens-eval-multihop.json"
+from hw0.core import jlens_data_dir
+
+ORDER_OPS = f"{jlens_data_dir()}/data/evaluations/lens-eval-order-ops.json"
+MULTIHOP = f"{jlens_data_dir()}/data/evaluations/lens-eval-multihop.json"
+OUT = ("results/lens_validation_pen.json" if __import__("os").environ.get("HW0_LENS_PATH")
+       else "results/lens_validation.json")
 KS = (1, 5, 10)
 
 WORDS = {0: "zero", 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six",
@@ -102,6 +106,7 @@ def main():
         j, g = r["jlens"], r["logit_lens"]
         return j[1] >= g[1] and j[5] >= g[5] and (j[1] > g[1] or j[5] > g[5])
     report["gate"] = "PASS" if any(wins(report[n]) for n in ("order-ops", "multihop")) else "FAIL"
+    json.dump(report, open(OUT, "w"), indent=1)
     print(json.dumps(report, indent=1))
 
 

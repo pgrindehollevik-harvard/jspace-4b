@@ -5,7 +5,12 @@ CS 2881 (Harvard, Fall 2026) Homework 0. Extends the GSM8K chain-of-thought resu
 (Gurnee et al., Anthropic, July 2026) to a difficulty ladder — GSM8K → MATH-500 → AIME — on
 `Qwen/Qwen3-4B`, run entirely on one Apple M4 Pro (MPS).
 
-**Report:** [`report.pdf`](report.pdf) *(in progress)*
+**Report:** [`report.pdf`](report.pdf)
+
+**Result in one line:** a pre-registered negative replication — J-lens directions on
+Qwen3-4B are causally load-bearing but not selectively separable from ordinary
+prediction, so the stop-gate failed (8 rungs, 2 lenses) and the pre-registered
+CoT-vs-difficulty grid was correctly never run.
 
 ## Question
 
@@ -20,12 +25,19 @@ problem difficulty increases.
 | Path | Contents |
 |---|---|
 | `docs/PREREGISTRATION.md` | Hypotheses, full design, analysis plan — frozen at tag `prereg-v1` **before** any experiment ran |
-| `docs/DEVIATIONS.md` | Timestamped log of any deviation from the pre-registration |
-| `src/hw0/` | Implementation: ablation hooks, generation loop, datasets, grading, diagnostics, grid runner |
-| `tests/` | Unit tests for the intervention (exemption rule, projection correctness, clean-path identity) |
-| `configs/` | Experiment grid configuration |
-| `results/` | Raw per-generation JSONL records + derived tables (committed for reproducibility) |
+| `docs/DEVIATIONS.md` | Timestamped log of every deviation from the pre-registration |
+| `docs/LEARNINGS.md` | The experiment explained end to end, plus systems lessons |
+| `src/hw0/` | Implementation: ablation hooks, resumable generation, datasets, grading, calibration, lens fitting, grid runner, analysis, figure |
+| `tests/` | 7 unit tests for the intervention (exemption rule, projection correctness, clean-path identity, chunked-resume equivalence) |
+| `scripts/` | Crash-tolerant supervisors for unattended runs |
+| `results/` | Committed evidence: `calibration.json` + `calibration_pen.json` (the 8-rung ladders, incl. per-item hits in the `_state` files), `lens_validation*.json` (gate 1), `figures/` |
 | `report/` | Report source; built PDF is copied to `report.pdf` in the root |
+
+The main grid (`results/grid.jsonl`) intentionally does not exist: the pre-registered
+stop-gate failed, so per `docs/PREREGISTRATION.md` section 7 the grid was not run. The
+fitted penultimate lens (445 MB) exceeds GitHub's file limit and is not committed;
+regenerate it with `hw0.fit_lens` (~5.7 h on an M4 Pro, checkpointed and resumable) —
+its validation artifact is committed as `results/lens_validation_pen.json`.
 
 ## Key external artifacts
 
@@ -45,31 +57,37 @@ problem difficulty increases.
 
 ```bash
 uv venv .venv --python 3.12
-uv pip install --python .venv/bin/python torch transformers datasets accelerate \
-    'huggingface_hub[cli]' matplotlib 'math-verify[antlr4_13_2]'
 git clone https://github.com/anthropics/jacobian-lens vendor/jacobian-lens
-uv pip install --python .venv/bin/python -e vendor/jacobian-lens
+uv pip install --python .venv/bin/python -e . -e vendor/jacobian-lens
 ```
 
-Model (~8 GB) and lens (~437 MB) download from HF Hub on first run.
+`-e .` installs the `hw0` package and every dependency (torch, transformers>=5.5,
+datasets, math-verify, statsmodels, pytest, ...) from `pyproject.toml`. The model
+(~8 GB) and the stock lens (~437 MB) download from HF Hub on first run.
 
 ## Reproducing the results
 
 Every step is resumable (stage- or chunk-level checkpoints); rerunning a completed step
-loads its checkpoint. Order matters — each stage gates the next:
+loads its checkpoint. Order matters — each stage gates the next. This reproduces the
+submission's actual path, including the pre-registered contingency:
 
 ```bash
 .venv/bin/python -m pytest tests/           # 7 intervention-correctness tests (loads model)
-.venv/bin/python -u -m hw0.validate_lens    # gate 1: J-lens must beat logit lens
-.venv/bin/python -u -m hw0.calibrate        # gate 2: hypothesis-blind band calibration +
-                                            #   positive-control stop-gate -> results/calibration.json
-.venv/bin/python -u -m hw0.fit_lens         # (contingency, prereg 5.7) penultimate-target lens refit
-.venv/bin/python -u -m hw0.run_grid         # main grid (only if stop_gate == PASS), resumable JSONL
-.venv/bin/python -u -m hw0.analyze          # grading, bootstrap CIs, trend model, figures
-cd report && pdflatex report.tex            # rebuild the report (copy to ./report.pdf)
+.venv/bin/python -u -m hw0.validate_lens    # gate 1 (stock lens) -> results/lens_validation.json
+.venv/bin/python -u -m hw0.calibrate        # gate 2: hypothesis-blind ladder + stop-gate
+                                            #   -> results/calibration.json  (verdict: FAIL)
+.venv/bin/python -u -m hw0.fit_lens         # contingency (prereg 5.7): penultimate lens, ~5.7h
+export HW0_LENS_PATH=results/lens_fit/qwen3-4b_pen_n32.pt
+.venv/bin/python -u -m hw0.validate_lens    # gate 1 for the refit -> lens_validation_pen.json
+.venv/bin/python -u -m hw0.calibrate        # refit ladder -> calibration_pen.json (verdict: FAIL)
+unset HW0_LENS_PATH
+.venv/bin/python -m hw0.fig_ladder          # the report's figure, from the two calibration JSONs
+cd report && pdflatex report.tex && cp report.pdf ../report.pdf
 ```
 
-For unattended runs on a laptop, `scripts/supervisor.sh` chains calibration -> gate ->
-grid with progress-aware crash restarts (see `docs/LEARNINGS.md` section 4 for why that
-exists). The principal tables and figures regenerate from `results/` via `hw0.analyze`;
-the calibration table comes from `results/calibration.json`.
+`hw0.run_grid` and `hw0.analyze` implement the pre-registered main experiment; they
+refuse to run / have nothing to analyze because the stop-gate verdict is FAIL — that
+refusal is the submission's result. For unattended runs on a laptop,
+`scripts/supervisor.sh` and `scripts/fit_supervisor.sh` chain the stages with
+progress-aware crash restarts (`docs/LEARNINGS.md` section 4 explains why). The
+report's table and figure regenerate from `results/calibration*.json` via `hw0.fig_ladder`.

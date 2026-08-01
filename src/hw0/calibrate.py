@@ -34,8 +34,10 @@ from hw0.data import load_gsm8k, load_wikitext_heldout
 from hw0.generate import generate, generate_resumable
 from hw0.grading import max_ngram_repetition
 
-MULTIHOP = ".context/jacobian-lens/data/evaluations/lens-eval-multihop.json"
-ORDER_OPS = ".context/jacobian-lens/data/evaluations/lens-eval-order-ops.json"
+from hw0.core import jlens_data_dir
+
+MULTIHOP = f"{jlens_data_dir()}/data/evaluations/lens-eval-multihop.json"
+ORDER_OPS = f"{jlens_data_dir()}/data/evaluations/lens-eval-order-ops.json"
 # A locally fitted lens (HW0_LENS_PATH) gets its own namespaced ladder run, so the
 # original verdict's provenance is preserved.
 _SUFFIX = "_pen" if os.environ.get("HW0_LENS_PATH") else ""
