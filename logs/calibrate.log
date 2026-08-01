@@ -1,21 +1,35 @@
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 5163.67it/s]
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 1776.49it/s]
-  multihop[clean] 0/93
-  multihop[clean] 20/93
-  multihop[clean] 40/93
-  multihop[clean] 60/93
-  multihop[clean] 80/93
-clean multihop accuracy: 0.419 (39/93)
-  multihop[(14, 24)-jspace] 0/93
-  multihop[(14, 24)-jspace] 20/93
-  multihop[(14, 24)-jspace] 40/93
-  multihop[(14, 24)-jspace] 60/93
-  multihop[(14, 24)-jspace] 80/93
-  multihop[(14, 24)-random] 0/93
-  multihop[(14, 24)-random] 20/93
-  multihop[(14, 24)-random] 40/93
-  multihop[(14, 24)-random] 60/93
-  multihop[(14, 24)-random] 80/93
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 5198.26it/s]
+Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 1589.96it/s]
+  control[clean-mh] 0/93 (rss=2.3G mps=8.0G)
+  control[clean-mh] 20/93 (rss=2.3G mps=8.0G)
+  control[clean-mh] 40/93 (rss=2.3G mps=8.0G)
+  control[clean-mh] 60/93 (rss=2.3G mps=8.0G)
+  control[clean-mh] 80/93 (rss=2.3G mps=8.0G)
+stage[clean_multihop] done (rss=2.3G mps=8.0G)
+  control[clean-oo] 0/55 (rss=2.3G mps=8.0G)
+  control[clean-oo] 20/55 (rss=2.3G mps=8.0G)
+  control[clean-oo] 40/55 (rss=2.3G mps=8.0G)
+stage[clean_orderops] done (rss=2.3G mps=8.0G)
+clean multihop=0.419 order-ops=0.745 -> control=order-ops
+  control[14-24:10-jspace] 0/55 (rss=2.3G mps=8.2G)
+  control[14-24:10-jspace] 20/55 (rss=2.3G mps=8.2G)
+  control[14-24:10-jspace] 40/55 (rss=2.3G mps=8.2G)
+stage[rung:14-24:10:jspace] done (rss=2.3G mps=8.0G)
+  control[14-24:10-random] 0/55 (rss=2.3G mps=8.2G)
+  control[14-24:10-random] 20/55 (rss=2.3G mps=8.2G)
+  control[14-24:10-random] 40/55 (rss=2.3G mps=8.2G)
+stage[rung:14-24:10:random] done (rss=2.3G mps=8.0G)
+  degen 0/30 (rss=2.3G mps=8.2G)
+  degen 10/30 (rss=2.3G mps=8.2G)
 /opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
   warnings.warn('resource_tracker: There appear to be %d '
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4133.43it/s]
+Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 1707.08it/s]
+stage[clean_multihop] loaded from checkpoint
+stage[clean_orderops] loaded from checkpoint
+clean multihop=0.419 order-ops=0.745 -> control=order-ops
+stage[rung:14-24:10:jspace] loaded from checkpoint
+stage[rung:14-24:10:random] loaded from checkpoint
+  degen 0/30 (rss=2.3G mps=8.2G)

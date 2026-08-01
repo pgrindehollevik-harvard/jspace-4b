@@ -1,6 +1,9 @@
 #!/bin/zsh
 # Unattended chain: calibration (restart-on-crash, checkpointed stages resume) ->
-# freeze results in git -> main grid with auto-restart. Detached via nohup+caffeinate.
+# freeze results in git -> main grid with progress-aware auto-restart.
+# Silent SIGKILLs during sustained MPS load are an observed failure mode on this
+# machine; the policy is: restart forever WHILE progress is being made, give up
+# only after 8 consecutive restarts with no new work recorded.
 cd /Users/peterflo/conductor/workspaces/hw0-v1/helsinki
 log() { echo "$(date '+%F %T') $1" >> logs/supervisor.log }
 
@@ -8,7 +11,7 @@ restarts=0
 until .venv/bin/python -u -m hw0.calibrate >> logs/calibrate.log 2>&1; do
   restarts=$((restarts+1))
   log "calibration crashed (restart $restarts) — resuming from checkpoint"
-  if [ $restarts -ge 10 ]; then log "calibration: too many restarts, giving up"; exit 1; fi
+  if [ $restarts -ge 40 ]; then log "calibration: too many restarts, giving up"; exit 1; fi
   sleep 15
 done
 if [ ! -f results/calibration.json ]; then
@@ -28,11 +31,14 @@ if [ "$gate" != "PASS" ]; then
 fi
 
 export HF_HUB_OFFLINE=1
-restarts=0
+stalled=0
+last_lines=-1
 until .venv/bin/python -u -m hw0.run_grid >> logs/grid.log 2>&1; do
-  restarts=$((restarts+1))
-  log "grid crashed (restart $restarts)"
-  if [ $restarts -ge 20 ]; then log "grid: too many restarts, giving up"; exit 1; fi
+  lines=$(wc -l < results/grid.jsonl 2>/dev/null || echo 0)
+  if [ "$lines" -gt "$last_lines" ]; then stalled=0; else stalled=$((stalled+1)); fi
+  last_lines=$lines
+  log "grid crashed (progress=$lines lines, consecutive-no-progress=$stalled)"
+  if [ $stalled -ge 8 ]; then log "grid: no progress across 8 restarts, giving up"; exit 1; fi
   sleep 30
 done
 log "GRID_COMPLETE"

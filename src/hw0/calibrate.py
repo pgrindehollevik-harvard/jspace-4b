@@ -100,19 +100,28 @@ def wikitext_top1_match(setup, seqs, ablator) -> float:
     return matches / total
 
 
-def degenerate_rate(setup, problems, ablator) -> tuple[float, float]:
-    """(degenerate fraction, ablated tok/s) over pilot CoT generations."""
-    degen, toks, secs = 0, 0, 0.0
-    for i, p in enumerate(problems):
+def degenerate_rate(setup, problems, ablator, state, key) -> tuple[float, float]:
+    """(degenerate fraction, ablated tok/s) over pilot CoT generations.
+
+    Sub-checkpointed per generation: this is the longest calibration stage (~90s per
+    generation) and the one the silent SIGKILLs keep landing in — a crash may only
+    cost the in-flight generation."""
+    partial = state.setdefault(key, {"flags": [], "toks": 0, "secs": 0.0})
+    for i in range(len(partial["flags"]), len(problems)):
+        p = problems[i]
         prompt = core.chat_prompt(setup, p["problem"], "cot")
         t0 = time.time()
         r = generate(setup, prompt, max_new_tokens=640, seed=1, ablator=ablator)
-        secs += time.time() - t0
-        toks += r.n_new
-        degen += (max_ngram_repetition(r.token_ids) > 0.5) or (r.hit_cap and r.n_new >= 640)
-        if i % 10 == 0:
+        partial["secs"] += time.time() - t0
+        partial["toks"] += r.n_new
+        partial["flags"].append(bool(
+            (max_ngram_repetition(r.token_ids) > 0.5)
+            or (r.hit_cap and r.n_new >= 640)))
+        json.dump(state, open(STATE, "w"))
+        if i % 5 == 0:
             print(f"  degen {i}/{len(problems)} ({mem()})", flush=True)
-    return degen / len(problems), toks / secs
+    return sum(partial["flags"]) / len(partial["flags"]), (
+        partial["toks"] / max(partial["secs"], 1e-9))
 
 
 def mcnemar_exact_p(hits_a: list[bool], hits_b: list[bool]) -> float:
@@ -149,7 +158,7 @@ def evaluate_rung(setup, state, items, pilot, wiki, clean_hits, band, k) -> dict
     def run_degen():
         abl = JSpaceAblator(setup, band, k=k).install()
         try:
-            d, t = degenerate_rate(setup, pilot, abl)
+            d, t = degenerate_rate(setup, pilot, abl, state, f"rung:{tag}:degen_partial")
         finally:
             abl.remove()
         return {"degenerate_rate": d, "tok_s": t}
