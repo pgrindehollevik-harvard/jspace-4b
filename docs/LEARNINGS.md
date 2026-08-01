@@ -78,6 +78,37 @@ this can genuinely explain every choice. Final version completed after the resul
   (137 = SIGKILL), flat memory telemetry (killing the OOM theory), and the pending-update
   discovery — each eliminating a hypothesis the previous fix had been built on.
 
-## 5. Open questions to be answered by the final data
+## 5. How it ended — and why a negative result is a real answer
 
-*(completed after the refit ladder / grid)*
+- The pen-lens ladder failed all four rungs, with the refit lens's directions behaving
+  *identically to random* — undertrained estimation converging to noise, which
+  back-validates the stock lens's differential as real structure.
+- **Final result:** on Qwen3-4B, J-lens directions are causally real (light band: 16-pt
+  J drop, 0.0-pt random drop) but not selectively separable from ordinary prediction —
+  the precondition for the paper's CoT-externalization comparison doesn't hold at 4B
+  scale. H1/H2 are unanswerable as posed; that *is* the answer to "does this transfer
+  as difficulty increases" — the premise breaks before difficulty even enters.
+- **The stop-gate did its job twice.** Without it we'd have burned 24+ hours producing a
+  CoT-vs-direct number that couldn't be attributed to workspace externalization — a
+  clean answer to an uninterpretable question. The assignment explicitly warns against
+  exactly that trade.
+- **Negative results need MORE rigor, not less:** the reason this negative replication
+  is defensible is the paper trail — pre-registered gates, two lenses, eight rungs,
+  norm-matched controls, committed interpretation rules (deviation 4) written *before*
+  the deciding data existed, and a discriminating experiment proposed for the two
+  surviving explanations (scale vs. lens quality: rerun on 14B/32B, where they predict
+  opposite gate outcomes).
+
+## Questions you should be able to answer before submitting
+
+1. Why ablate the *projection onto* J-lens directions instead of steering along them?
+2. Why exempt tokens in the clean model's top-10 predictions? What would go wrong
+   without the exemption?
+3. Why must the random control be norm-matched *per slot* rather than on average?
+4. Why was calibration forbidden from looking at CoT-vs-direct accuracy?
+5. What does "the pen lens behaved like the random control" tell you, and why does it
+   *strengthen* the stock-lens finding?
+6. Why is P_D a triple difference? What rival explanation does each layer remove?
+7. Why did we refuse to run the grid after the gate failed, even though we had time?
+8. What single experiment best separates the two surviving explanations, and what does
+   each predict?

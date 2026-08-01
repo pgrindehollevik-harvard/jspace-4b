@@ -89,19 +89,39 @@ degeneration --- but they are not \emph{selective}: 34--42\% of ordinary next-to
 predictions change (paper: ``only mildly perturbed'' on Sonnet 4.5). Per the
 pre-registered contingency (the stock lens targets the final layer; the paper's recipe
 targets the penultimate layer to avoid last-block artifacts), we refit a
-penultimate-target lens and re-ran the ladder once.
-%% PLACEHOLDER: refit ladder outcome, and either the main-grid results (headline
-%% retention-vs-difficulty figure, P_D per dataset, H2 contrast, controls table)
-%% or the negative-replication consolidation.
+penultimate-target lens (n=32 prompts; 17\,h of MPS backward passes made the registered
+$n{\approx}100$ infeasible --- deviation 4, with its interpretation constraint committed
+\emph{before} the re-run) and re-ran the ladder. All four rungs failed again, in a
+diagnostic pattern: the refit lens's ``J-directions'' behaved \emph{identically to the
+random control} (drops $10.9$ vs $10.9$; $14.5$ vs $12.7$), and selectivity worsened
+(0.45--0.68). An undertrained lens converges to random-control behavior --- which
+corroborates that the stock lens's J-vs-random differential reflects real structure.
+
+\begin{center}
+\includegraphics[width=\linewidth]{../results/figures/ladder.pdf}
+\end{center}
 
 \section{Analysis}
-%% PLACEHOLDER pending final data. Fixed structure:
-%% (1) verdict on H1/H2 or the negative replication with the calibration table as the
-%%     primary evidence; (2) interpretation: small-model workspace entangled with
-%%     ordinary prediction vs.\ lens-quality limitation --- what each predicts and which
-%%     the refit distinguishes; (3) alternative explanations and residual confounds
-%%     (final-vs-penultimate lens, band transfer by percent depth, order-ops as control);
-%% (4) next with more compute: Qwen3-14B/32B (pre-fitted lenses exist), thinking-mode
-%%     traces, per-level CoT-length covariate.
+\textbf{Verdict.} H1/H2 are unanswerable as posed on this model: the pre-registered
+precondition for interpreting a CoT-vs-direct comparison --- an ablation that is
+J-specific \emph{and} spares ordinary prediction --- was not achievable at any of eight
+settings across two lenses. We report the negative replication rather than an
+uninterpretable grid. \textbf{What is positively established:} (i) the Jacobian lens
+transfers to Qwen3-4B as a \emph{readout} (it beats the logit lens at surfacing silent
+multi-hop intermediates); (ii) its directions are \emph{causally load-bearing} --- the
+light-band result (16-point J drop, zero norm-matched-random drop, outputs coherent) is
+a clean causal dissociation; (iii) what fails to transfer is the paper's
+\emph{selectivity} signature. \textbf{Two readings remain.} (a) Small models route
+ordinary next-token prediction \emph{through} verbalizable representations --- the
+workspace/automatic separation is an emergent property of scale (consistent with the
+paper's Haiku 4.5 warning, and with our finding that clean Qwen3-4B scores only 0.42 on
+two-hop silent composition); (b) lens estimation quality at 4B (the stock lens
+early-stopped at $n{=}479$; final-layer target) smears workspace directions with
+general-prediction components. Our refit could not adjudicate (b) at a feasible fit
+size --- reported as unresolved, not refuted. \textbf{Next with more compute:} the same
+pre-registered grid on Qwen3-14B/32B (pre-fitted lenses exist), where reading (a)
+predicts the gate passes and (b) predicts it keeps failing; a full-budget penultimate
+lens; and thinking-mode traces. All code, prompts, seeds, per-generation records, and
+this pipeline's crash-tolerant infrastructure are in the repository for exact reuse.
 
 \end{document}

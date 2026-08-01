@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  31 JUL 2026 21:08
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  1 AUG 2026 03:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -341,8 +341,7 @@ ef
 File: l3backend-pdftex.def 2024-05-08 L3 backend support: PDF output (pdfTeX)
 \l__color_backend_stack_int=\count303
 \l__pdf_internal_box=\box56
-)
-No file report.aux.
+) (./report.aux)
 \openout1 = `report.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 9.
@@ -363,6 +362,7 @@ LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 9.
 LaTeX Font Info:    ... okay on input line 9.
 LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 9.
 LaTeX Font Info:    ... okay on input line 9.
+
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -443,6 +443,8 @@ File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman
 (RS)
 )
 Package hyperref Info: Link coloring OFF on input line 9.
+
+(./report.out) (./report.out)
 \@outlinefile=\write3
 \openout3 = `report.out'.
 
@@ -457,30 +459,30 @@ LaTeX Font Info:    Font shape `OT1/cmtt/bx/n' in size <10> not available
 [1
 
 {/usr/local/texlive/2025basic/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
+<../results/figures/ladder.pdf, id=41, 555.2541pt x 240.0078pt>
+File: ../results/figures/ladder.pdf Graphic file (type pdf)
+<use ../results/figures/ladder.pdf>
+Package pdftex.def Info: ../results/figures/ladder.pdf  used on input line 101.
 
-[2] (./report.aux)
+(pdftex.def)             Requested size: 505.89pt x 218.67111pt.
+
+
+[2 <../results/figures/ladder.pdf>] (./report.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
-
-
-Package rerunfilecheck Warning: File `report.out' has changed.
-(rerunfilecheck)                Rerun to get outlines right
-(rerunfilecheck)                or use package `bookmark'.
-
-Package rerunfilecheck Info: Checksums for `report.out':
-(rerunfilecheck)             Before: <no file>
-(rerunfilecheck)             After:  B49D0F46CA0F2C1B41F35B22F08A4501;825.
+Package rerunfilecheck Info: File `report.out' has not changed.
+(rerunfilecheck)             Checksum: B49D0F46CA0F2C1B41F35B22F08A4501;825.
  ) 
 Here is how much of TeX's memory you used:
- 11939 strings out of 474662
- 186681 string characters out of 5751110
- 648766 words of memory out of 5000000
- 34802 multiletter control sequences out of 15000+600000
- 564842 words of font info for 83 fonts, out of 8000000 for 9000
+ 11978 strings out of 474662
+ 187261 string characters out of 5751110
+ 648757 words of memory out of 5000000
+ 34817 multiletter control sequences out of 15000+600000
+ 565433 words of font info for 92 fonts, out of 8000000 for 9000
  319 hyphenation exceptions out of 8191
- 75i,11n,79p,1003b,448s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,11n,79p,1003b,450s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx1
 0.pfb></usr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/c
 mbx12.pfb></usr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/
@@ -494,10 +496,10 @@ e1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2025basic/texmf-dist/fonts/
 type1/public/amsfonts/cm/cmsy9.pfb></usr/local/texlive/2025basic/texmf-dist/fon
 ts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2025basic/texmf-dist
 /fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on report.pdf (2 pages, 161836 bytes).
+Output written on report.pdf (2 pages, 185097 bytes).
 PDF statistics:
- 84 PDF objects out of 1000 (max. 8388607)
- 55 compressed objects within 1 object stream
+ 158 PDF objects out of 1000 (max. 8388607)
+ 80 compressed objects within 1 object stream
  8 named destinations out of 1000 (max. 500000)
- 18945 words of extra memory for PDF output out of 20736 (max. 10000000)
+ 18990 words of extra memory for PDF output out of 20736 (max. 10000000)
 
