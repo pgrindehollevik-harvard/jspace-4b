@@ -31,7 +31,7 @@ import torch
 from hw0 import core
 from hw0.ablation import JSpaceAblator
 from hw0.data import load_gsm8k, load_wikitext_heldout
-from hw0.generate import generate
+from hw0.generate import generate, generate_resumable
 from hw0.grading import max_ngram_repetition
 
 MULTIHOP = ".context/jacobian-lens/data/evaluations/lens-eval-multihop.json"
@@ -110,13 +110,19 @@ def degenerate_rate(setup, problems, ablator, state, key) -> tuple[float, float]
     for i in range(len(partial["flags"]), len(problems)):
         p = problems[i]
         prompt = core.chat_prompt(setup, p["problem"], "cot")
+        cur = partial.setdefault("cur", {})
+        pre_existing = len(cur.get("tokens", []))
         t0 = time.time()
-        r = generate(setup, prompt, max_new_tokens=640, seed=1, ablator=ablator)
+        r = generate_resumable(setup, prompt, 640, seed=1, ablator=ablator,
+                               state=cur, save=lambda: json.dump(state, open(STATE, "w")))
+        # tok/s counts only tokens produced within this process's timing window,
+        # so resumed prefixes don't inflate the throughput estimate.
         partial["secs"] += time.time() - t0
-        partial["toks"] += r.n_new
+        partial["toks"] += len(r.token_ids) - pre_existing
         partial["flags"].append(bool(
             (max_ngram_repetition(r.token_ids) > 0.5)
-            or (r.hit_cap and r.n_new >= 640)))
+            or (r.hit_cap and len(r.token_ids) >= 640)))
+        partial["cur"] = {}
         json.dump(state, open(STATE, "w"))
         if i % 5 == 0:
             print(f"  degen {i}/{len(problems)} ({mem()})", flush=True)

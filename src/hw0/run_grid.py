@@ -25,8 +25,10 @@ import torch
 from hw0 import core
 from hw0.ablation import JSpaceAblator
 from hw0.data import CAPS, load_aime, load_gsm8k, load_math500
-from hw0.generate import generate
+from hw0.generate import generate_resumable
 from hw0.grading import max_ngram_repetition
+
+PARTIALS = "results/partials"
 
 OUT = "results/grid.jsonl"
 
@@ -107,6 +109,7 @@ def main():
 
     setup = core.load()
     problems = load_problems()
+    os.makedirs(PARTIALS, exist_ok=True)
     done = done_keys(OUT, band, k)
     print(f"{len(done)} generations already recorded")
 
@@ -135,9 +138,20 @@ def main():
                     abl = ablators[condition]
                     prompt = core.chat_prompt(setup, p["problem"], mode)
                     t0 = time.time()
+                    # Chunk-level persistence: a SIGKILL mid-generation (an observed
+                    # failure mode on this machine — see docs/DEVIATIONS.md) costs at
+                    # most one chunk. Sidecar removed once the full record is written.
+                    pfile = os.path.join(
+                        PARTIALS, f"{key[0]}__{p['id'].replace('/', '_')}__{s}.json")
+                    pstate = json.load(open(pfile)) if os.path.exists(pfile) else {}
+
+                    def save_partial(pstate=pstate, pfile=pfile):
+                        json.dump(pstate, open(pfile + ".tmp", "w"))
+                        os.replace(pfile + ".tmp", pfile)
+
                     # One transient MPS error must not kill a 24h unattended run:
                     # retry once with full teardown, then skip (the absent key makes
-                    # a later restart redo it).
+                    # a later restart redo it; partial chunks persist either way).
                     r = None
                     for attempt in (0, 1):
                         try:
@@ -145,9 +159,9 @@ def main():
                                 abl.install()
                                 if abl.mode == "random":
                                     abl.reseed(seed_for(p["id"], s * 7919 + 1))
-                            r = generate(setup, prompt,
-                                         max_new_tokens=CAPS[(ds, mode)],
-                                         seed=seed_for(p["id"], s), ablator=abl)
+                            r = generate_resumable(
+                                setup, prompt, CAPS[(ds, mode)],
+                                seed_for(p["id"], s), abl, pstate, save_partial)
                             break
                         except Exception:
                             print(f"FAIL {key} attempt {attempt}", file=sys.stderr)
@@ -172,6 +186,8 @@ def main():
                                         else core.BAND_LIGHT), "k": k}
                     out.write(json.dumps(rec) + "\n")
                     out.flush()
+                    if os.path.exists(pfile):
+                        os.remove(pfile)
             if i % 10 == 0:
                 print(f"[{dataset}] problem {i}/{max_n} done at {time.strftime('%H:%M:%S')}",
                       flush=True)

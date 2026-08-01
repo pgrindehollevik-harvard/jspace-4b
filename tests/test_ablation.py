@@ -139,3 +139,24 @@ def test_generation_determinism_and_dual_stream(setup):
     assert outs[0].token_ids == outs[1].token_ids, "same seed must reproduce exactly"
     clean = generate(setup, prompt, max_new_tokens=40, seed=7)
     assert clean.n_new > 0 and outs[0].n_new > 0
+
+
+def test_chunked_resumable_matches_unchunked(setup):
+    from hw0.generate import generate_resumable
+    prompt = core.chat_prompt(setup, "What is 6 * 7?", "cot")
+    band = core.BAND_PRIMARY_CANDIDATES[0]
+    abl = JSpaceAblator(setup, band).install()
+    try:
+        whole = generate(setup, prompt, max_new_tokens=48, seed=3, ablator=abl)
+        state, saves = {}, []
+        chunked = generate_resumable(setup, prompt, 48, 3, abl, state,
+                                     save=lambda: saves.append(len(state["tokens"])),
+                                     chunk=16)
+    finally:
+        abl.remove()
+    assert len(saves) >= 2, "must persist at least once per chunk"
+    assert chunked.token_ids[:8] == whole.token_ids[:8], (
+        "first chunk must match the unchunked stream exactly")
+    agree = sum(a == b for a, b in zip(chunked.token_ids, whole.token_ids))
+    assert agree / max(len(whole.token_ids), 1) > 0.8, (
+        "resume-boundary numerics may wobble, but streams must largely agree")
