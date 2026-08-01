@@ -37,13 +37,15 @@ LADDER = [  # (band, k) tried in order until the stop-gate passes
 ]
 
 
-def multihop_accuracy(setup, items, ablator=None) -> list[bool]:
+def multihop_accuracy(setup, items, ablator=None, tag="") -> list[bool]:
     """Greedy 8-token completion; hit = target substring appears (case-insensitive)."""
     hits = []
-    for it in items:
+    for i, it in enumerate(items):
         r = generate(setup, it["prompt"], max_new_tokens=8, seed=0, ablator=ablator,
                      greedy=True)
         hits.append(it["target"].strip().lower() in r.text.lower())
+        if i % 20 == 0:
+            print(f"  multihop[{tag}] {i}/{len(items)}", flush=True)
     return hits
 
 
@@ -99,7 +101,7 @@ def evaluate_rung(setup, items, pilot, wiki, clean_hits, band, k) -> dict:
     for mode in ("jspace", "random"):
         abl = JSpaceAblator(setup, band, k=k, mode=mode).install()
         try:
-            hits[mode] = multihop_accuracy(setup, items, ablator=abl)
+            hits[mode] = multihop_accuracy(setup, items, ablator=abl, tag=f"{band}-{mode}")
             rung[f"multihop_{mode}"] = sum(hits[mode]) / len(hits[mode])
             rung[f"wikitext_top1_{mode}"] = wikitext_top1_match(setup, wiki, abl)
         finally:
@@ -124,12 +126,14 @@ def evaluate_rung(setup, items, pilot, wiki, clean_hits, band, k) -> dict:
 
 
 def main():
+    import faulthandler
+    faulthandler.enable()  # dump a traceback on SIGSEGV/SIGABRT (silent-death forensics)
     setup = core.load()
     items = json.load(open(MULTIHOP))["items"]
     pilot = load_gsm8k(n=30, seed=100, split="train")
     wiki = load_wikitext_heldout(n=50)
 
-    clean_hits = multihop_accuracy(setup, items)
+    clean_hits = multihop_accuracy(setup, items, tag="clean")
     clean_acc = sum(clean_hits) / len(clean_hits)
     report = {"clean_multihop": clean_acc, "rungs": []}
     print(f"clean multihop accuracy: {clean_acc:.3f} ({sum(clean_hits)}/{len(clean_hits)})")
