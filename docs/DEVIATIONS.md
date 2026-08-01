@@ -41,3 +41,20 @@ exact McNemar on per-item paired outcomes; the pre-registration named "Fisher ex
 unpaired Fisher test discards that structure (anti-conservative or conservative depending on
 correlation). Decided before any calibration run completed (the only prior run was killed
 mid-flight by a laptop crash with no results written). The ≥2× drop-ratio rule is unchanged.
+
+## 4. Contingency lens fit reduced to 32 prompts (2026-08-01)
+
+**What changed:** the pre-registered penultimate-target refit (section 5.7: "~100 wikitext
+prompts") ran with n=32.
+
+**Why:** measured fit throughput on MPS was 10.6 min/prompt (dim_batch=16); 100 prompts
+would take ~17h against an Aug 5 deadline. The paper reports lens quality beating the
+logit lens from ~10 prompts. Validation of the resulting lens: it passes the lens gate on
+multihop (pass@1 0.204 vs 0.183; pass@5 0.366 vs 0.353) but with thinner margins than the
+stock n=479 lens and clearly worse order-ops readout — the n=32 fit is undertrained
+relative to stock. **Interpretation constraint logged now, before the pen ladder runs:**
+if the pen ladder fails its gate, undertraining is confounded with the
+penultimate-target hypothesis; only a marked selectivity IMPROVEMENT is strong evidence
+(for the final-layer-artifact explanation), and a flat/worse result leaves the
+explanation candidate unresolved rather than refuted. The fit checkpoint is retained so
+the fit can be extended if the selectivity direction warrants it.
