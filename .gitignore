@@ -5,3 +5,6 @@ __pycache__/
 .DS_Store
 *.ckpt.pt
 checkpoints/
+logs/
+results/partials/
+results/lens_fit/ckpt.pt

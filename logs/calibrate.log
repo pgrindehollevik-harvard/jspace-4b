@@ -1,254 +1,0 @@
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 5198.26it/s]
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 1589.96it/s]
-  control[clean-mh] 0/93 (rss=2.3G mps=8.0G)
-  control[clean-mh] 20/93 (rss=2.3G mps=8.0G)
-  control[clean-mh] 40/93 (rss=2.3G mps=8.0G)
-  control[clean-mh] 60/93 (rss=2.3G mps=8.0G)
-  control[clean-mh] 80/93 (rss=2.3G mps=8.0G)
-stage[clean_multihop] done (rss=2.3G mps=8.0G)
-  control[clean-oo] 0/55 (rss=2.3G mps=8.0G)
-  control[clean-oo] 20/55 (rss=2.3G mps=8.0G)
-  control[clean-oo] 40/55 (rss=2.3G mps=8.0G)
-stage[clean_orderops] done (rss=2.3G mps=8.0G)
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-  control[14-24:10-jspace] 0/55 (rss=2.3G mps=8.2G)
-  control[14-24:10-jspace] 20/55 (rss=2.3G mps=8.2G)
-  control[14-24:10-jspace] 40/55 (rss=2.3G mps=8.2G)
-stage[rung:14-24:10:jspace] done (rss=2.3G mps=8.0G)
-  control[14-24:10-random] 0/55 (rss=2.3G mps=8.2G)
-  control[14-24:10-random] 20/55 (rss=2.3G mps=8.2G)
-  control[14-24:10-random] 40/55 (rss=2.3G mps=8.2G)
-stage[rung:14-24:10:random] done (rss=2.3G mps=8.0G)
-  degen 0/30 (rss=2.3G mps=8.2G)
-  degen 10/30 (rss=2.3G mps=8.2G)
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4133.43it/s]
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 1707.08it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-  degen 0/30 (rss=2.3G mps=8.2G)
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4788.90it/s]
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 1901.32it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-  degen 0/30 (rss=2.3G mps=8.2G)
-  degen 5/30 (rss=2.3G mps=8.2G)
-  degen 10/30 (rss=2.3G mps=8.2G)
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4218.73it/s]
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 2208.69it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 18711.77it/s]
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 1535.81it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4036.67it/s]
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 1618.17it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4948.03it/s]
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 1980.31it/s]
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4622.53it/s]
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 1460.41it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 21954.80it/s]
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 1342.18it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4988.65it/s]
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 24579.02it/s]
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 792.57it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4058.65it/s]
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 602.02it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 22227.25it/s]
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 892.22it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4406.21it/s]
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 522.13it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-  degen 15/30 (rss=2.3G mps=8.2G)
-  degen 20/30 (rss=2.4G mps=8.2G)
-  degen 25/30 (rss=2.5G mps=8.2G)
-stage[rung:14-24:10:degen] done (rss=2.5G mps=8.0G)
-{"band": [14, 24], "k": 10, "control_jspace": 0.5818181818181818, "wikitext_top1_jspace": 0.61703125, "control_random": 0.6545454545454545, "wikitext_top1_random": 0.7915625, "degenerate_rate": 0.0, "ablated_tok_s": 6.233462514739477, "j_drop": 0.1636363636363637, "r_drop": 0.09090909090909094, "mcnemar_p_drop": 0.00390625, "mcnemar_p_j_vs_random": 0.2890625, "passes_constraints": false, "passes_gate": false}
-  control[14-31:10-jspace] 0/55 (rss=2.5G mps=8.3G)
-  control[14-31:10-jspace] 20/55 (rss=2.5G mps=8.3G)
-  control[14-31:10-jspace] 40/55 (rss=2.5G mps=8.3G)
-stage[rung:14-31:10:jspace] done (rss=2.5G mps=8.0G)
-  control[14-31:10-random] 0/55 (rss=2.5G mps=8.3G)
-  control[14-31:10-random] 20/55 (rss=2.5G mps=8.3G)
-  control[14-31:10-random] 40/55 (rss=2.5G mps=8.3G)
-stage[rung:14-31:10:random] done (rss=2.5G mps=8.0G)
-  degen 0/30 (rss=2.5G mps=8.3G)
-  degen 5/30 (rss=2.5G mps=8.3G)
-  degen 10/30 (rss=2.5G mps=8.3G)
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 5303.43it/s]
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 457.89it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-stage[rung:14-24:10:degen] loaded from checkpoint
-{"band": [14, 24], "k": 10, "control_jspace": 0.5818181818181818, "wikitext_top1_jspace": 0.61703125, "control_random": 0.6545454545454545, "wikitext_top1_random": 0.7915625, "degenerate_rate": 0.0, "ablated_tok_s": 6.233462514739477, "j_drop": 0.1636363636363637, "r_drop": 0.09090909090909094, "mcnemar_p_drop": 0.00390625, "mcnemar_p_j_vs_random": 0.2890625, "passes_constraints": false, "passes_gate": false}
-stage[rung:14-31:10:jspace] loaded from checkpoint
-stage[rung:14-31:10:random] loaded from checkpoint
-  degen 15/30 (rss=2.3G mps=8.3G)
-  degen 20/30 (rss=2.4G mps=8.3G)
-  degen 25/30 (rss=2.4G mps=8.3G)
-stage[rung:14-31:10:degen] done (rss=2.5G mps=8.0G)
-{"band": [14, 31], "k": 10, "control_jspace": 0.5636363636363636, "wikitext_top1_jspace": 0.57734375, "control_random": 0.6545454545454545, "wikitext_top1_random": 0.7275, "degenerate_rate": 0.0, "ablated_tok_s": 4.640776319372676, "j_drop": 0.18181818181818188, "r_drop": 0.09090909090909094, "mcnemar_p_drop": 0.001953125, "mcnemar_p_j_vs_random": 0.125, "passes_constraints": false, "passes_gate": false}
-  control[14-24:5-jspace] 0/55 (rss=2.5G mps=8.2G)
-  control[14-24:5-jspace] 20/55 (rss=2.5G mps=8.2G)
-  control[14-24:5-jspace] 40/55 (rss=2.5G mps=8.2G)
-stage[rung:14-24:5:jspace] done (rss=2.5G mps=8.0G)
-  control[14-24:5-random] 0/55 (rss=2.5G mps=8.2G)
-  control[14-24:5-random] 20/55 (rss=2.5G mps=8.2G)
-  control[14-24:5-random] 40/55 (rss=2.5G mps=8.2G)
-stage[rung:14-24:5:random] done (rss=2.5G mps=8.0G)
-  degen 0/30 (rss=2.5G mps=8.2G)
-  degen 5/30 (rss=2.5G mps=8.2G)
-  degen 10/30 (rss=2.5G mps=8.2G)
-  degen 15/30 (rss=2.5G mps=8.2G)
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4114.04it/s]
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 849.57it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-stage[rung:14-24:10:degen] loaded from checkpoint
-{"band": [14, 24], "k": 10, "control_jspace": 0.5818181818181818, "wikitext_top1_jspace": 0.61703125, "control_random": 0.6545454545454545, "wikitext_top1_random": 0.7915625, "degenerate_rate": 0.0, "ablated_tok_s": 6.233462514739477, "j_drop": 0.1636363636363637, "r_drop": 0.09090909090909094, "mcnemar_p_drop": 0.00390625, "mcnemar_p_j_vs_random": 0.2890625, "passes_constraints": false, "passes_gate": false}
-stage[rung:14-31:10:jspace] loaded from checkpoint
-stage[rung:14-31:10:random] loaded from checkpoint
-stage[rung:14-31:10:degen] loaded from checkpoint
-{"band": [14, 31], "k": 10, "control_jspace": 0.5636363636363636, "wikitext_top1_jspace": 0.57734375, "control_random": 0.6545454545454545, "wikitext_top1_random": 0.7275, "degenerate_rate": 0.0, "ablated_tok_s": 4.640776319372676, "j_drop": 0.18181818181818188, "r_drop": 0.09090909090909094, "mcnemar_p_drop": 0.001953125, "mcnemar_p_j_vs_random": 0.125, "passes_constraints": false, "passes_gate": false}
-stage[rung:14-24:5:jspace] loaded from checkpoint
-stage[rung:14-24:5:random] loaded from checkpoint
-  degen 20/30 (rss=2.3G mps=8.2G)
-  degen 25/30 (rss=2.4G mps=8.2G)
-stage[rung:14-24:5:degen] done (rss=2.4G mps=8.0G)
-{"band": [14, 24], "k": 5, "control_jspace": 0.6, "wikitext_top1_jspace": 0.61046875, "control_random": 0.6909090909090909, "wikitext_top1_random": 0.8171875, "degenerate_rate": 0.0, "ablated_tok_s": 5.18715319775398, "j_drop": 0.1454545454545455, "r_drop": 0.054545454545454564, "mcnemar_p_drop": 0.021484375, "mcnemar_p_j_vs_random": 0.1796875, "passes_constraints": false, "passes_gate": false}
-  control[14-19:10-jspace] 0/55 (rss=2.4G mps=8.1G)
-  control[14-19:10-jspace] 20/55 (rss=2.4G mps=8.1G)
-  control[14-19:10-jspace] 40/55 (rss=2.4G mps=8.1G)
-stage[rung:14-19:10:jspace] done (rss=2.4G mps=8.0G)
-  control[14-19:10-random] 0/55 (rss=2.4G mps=8.2G)
-  control[14-19:10-random] 20/55 (rss=2.4G mps=8.2G)
-  control[14-19:10-random] 40/55 (rss=2.4G mps=8.2G)
-stage[rung:14-19:10:random] done (rss=2.4G mps=8.0G)
-  degen 0/30 (rss=2.4G mps=8.1G)
-  degen 5/30 (rss=2.4G mps=8.1G)
-  degen 10/30 (rss=2.4G mps=8.1G)
-/opt/homebrew/Cellar/python@3.12/3.12.13/Frameworks/Python.framework/Versions/3.12/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
-  warnings.warn('resource_tracker: There appear to be %d '
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/398 [00:00<?, ?it/s]Loading weights: 100%|██████████| 398/398 [00:00<00:00, 4164.13it/s]
-Fetching 1 files:   0%|          | 0/1 [00:00<?, ?it/s]Fetching 1 files: 100%|██████████| 1/1 [00:00<00:00, 870.37it/s]
-stage[clean_multihop] loaded from checkpoint
-stage[clean_orderops] loaded from checkpoint
-clean multihop=0.419 order-ops=0.745 -> control=order-ops
-stage[rung:14-24:10:jspace] loaded from checkpoint
-stage[rung:14-24:10:random] loaded from checkpoint
-stage[rung:14-24:10:degen] loaded from checkpoint
-{"band": [14, 24], "k": 10, "control_jspace": 0.5818181818181818, "wikitext_top1_jspace": 0.61703125, "control_random": 0.6545454545454545, "wikitext_top1_random": 0.7915625, "degenerate_rate": 0.0, "ablated_tok_s": 6.233462514739477, "j_drop": 0.1636363636363637, "r_drop": 0.09090909090909094, "mcnemar_p_drop": 0.00390625, "mcnemar_p_j_vs_random": 0.2890625, "passes_constraints": false, "passes_gate": false}
-stage[rung:14-31:10:jspace] loaded from checkpoint
-stage[rung:14-31:10:random] loaded from checkpoint
-stage[rung:14-31:10:degen] loaded from checkpoint
-{"band": [14, 31], "k": 10, "control_jspace": 0.5636363636363636, "wikitext_top1_jspace": 0.57734375, "control_random": 0.6545454545454545, "wikitext_top1_random": 0.7275, "degenerate_rate": 0.0, "ablated_tok_s": 4.640776319372676, "j_drop": 0.18181818181818188, "r_drop": 0.09090909090909094, "mcnemar_p_drop": 0.001953125, "mcnemar_p_j_vs_random": 0.125, "passes_constraints": false, "passes_gate": false}
-stage[rung:14-24:5:jspace] loaded from checkpoint
-stage[rung:14-24:5:random] loaded from checkpoint
-stage[rung:14-24:5:degen] loaded from checkpoint
-{"band": [14, 24], "k": 5, "control_jspace": 0.6, "wikitext_top1_jspace": 0.61046875, "control_random": 0.6909090909090909, "wikitext_top1_random": 0.8171875, "degenerate_rate": 0.0, "ablated_tok_s": 5.18715319775398, "j_drop": 0.1454545454545455, "r_drop": 0.054545454545454564, "mcnemar_p_drop": 0.021484375, "mcnemar_p_j_vs_random": 0.1796875, "passes_constraints": false, "passes_gate": false}
-stage[rung:14-19:10:jspace] loaded from checkpoint
-stage[rung:14-19:10:random] loaded from checkpoint
