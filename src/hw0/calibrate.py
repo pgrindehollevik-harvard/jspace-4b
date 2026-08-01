@@ -36,8 +36,11 @@ from hw0.grading import max_ngram_repetition
 
 MULTIHOP = ".context/jacobian-lens/data/evaluations/lens-eval-multihop.json"
 ORDER_OPS = ".context/jacobian-lens/data/evaluations/lens-eval-order-ops.json"
-OUT = "results/calibration.json"
-STATE = "results/calibration_state.json"
+# A locally fitted lens (HW0_LENS_PATH) gets its own namespaced ladder run, so the
+# original verdict's provenance is preserved.
+_SUFFIX = "_pen" if os.environ.get("HW0_LENS_PATH") else ""
+OUT = f"results/calibration{_SUFFIX}.json"
+STATE = f"results/calibration_state{_SUFFIX}.json"
 
 BANDS = core.BAND_PRIMARY_CANDIDATES  # [(14, 24), (14, 31)]
 NEAR_CEILING = 0.90

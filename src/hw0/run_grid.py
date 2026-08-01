@@ -95,6 +95,7 @@ def done_keys(path: str, band, k) -> set:
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--band", default=None, help="a,b override; default from calibration")
+    ap.add_argument("--calibration", default="results/calibration.json")
     ap.add_argument("--dataset", default=None, choices=DATASET_ORDER)
     args = ap.parse_args()
 
@@ -102,7 +103,7 @@ def main():
         a, b = map(int, args.band.split(","))
         band, k = (a, b), core.K_ABLATE
     else:
-        cal = json.load(open("results/calibration.json"))
+        cal = json.load(open(args.calibration))
         assert cal["stop_gate"] == "PASS", "stop-gate failed; the main grid must not run"
         band, k = tuple(cal["chosen"]["band"]), cal["chosen"]["k"]
     print(f"band={band} k={k}")

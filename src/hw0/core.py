@@ -53,10 +53,17 @@ class Setup:
 
 
 def load(device: str = "mps", dtype=torch.bfloat16) -> Setup:
+    import os
     hf = transformers.AutoModelForCausalLM.from_pretrained(MODEL_NAME, dtype=dtype).to(device)
     tok = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
     model = jlens.from_hf(hf, tok)
-    lens = jlens.JacobianLens.from_pretrained(LENS_REPO, filename=LENS_FILE)
+    # HW0_LENS_PATH selects a locally fitted lens (the prereg 5.7 penultimate-target
+    # contingency) instead of the pre-fitted hub artifact.
+    local = os.environ.get("HW0_LENS_PATH")
+    if local:
+        lens = jlens.JacobianLens.load(local)
+    else:
+        lens = jlens.JacobianLens.from_pretrained(LENS_REPO, filename=LENS_FILE)
     return Setup(hf=hf, tok=tok, model=model, lens=lens, device=device)
 
 
