@@ -1,21 +1,29 @@
 """Calibration pilot + positive-control stop-gate (pre-registration section 7).
 
 Hypothesis-blind by construction: this stage sees only
-  (a) the multihop positive control (clean / J-ablated / random-ablated),
+  (a) the positive control (multihop primary; order-ops fallback if multihop is not
+      near-ceiling for the clean model — checked FIRST, as pre-registered),
   (b) wikitext teacher-forced selectivity (top-1 agreement with clean),
   (c) degenerate-output rate on 30 GSM8K TRAIN CoT generations,
 and never any CoT-vs-direct accuracy comparison.
 
-Band choice rule: from the pre-registered candidates, pick the band maximizing the
-multihop J-ablation drop SUBJECT TO degenerate rate < 10% and wikitext top-1 > 80%.
-STOP-GATE: the chosen band's multihop drop must be significant AND >= 2x the
-random-control drop (Fisher exact), else the ladder (k=10 -> k=5 -> light band) applies;
-if every rung fails, the main grid must not run.
+Band choice rule: evaluate BOTH primary candidates; choose the one maximizing the
+positive-control drop SUBJECT TO degenerate rate < 10% and wikitext top-1 > 80%.
+STOP-GATE: the drop must be significant (exact McNemar, deviation 3) AND >= 2x the
+random-control drop; the ladder (k=5, light band) applies only if no candidate passes.
+If every rung fails, the main grid must not run.
 
-Usage: .venv/bin/python -m hw0.calibrate          (writes results/calibration.json)
+Every expensive stage checkpoints to results/calibration_state.json, so a crash (or an
+OOM kill — observed twice on this 48GB machine) restarts from a clean process with the
+finished stages loaded. torch.mps.empty_cache() runs between stages; memory telemetry is
+printed with each progress line.
+
+Usage: .venv/bin/python -u -m hw0.calibrate     (writes results/calibration.json)
 """
 
 import json
+import os
+import resource
 import time
 
 import torch
@@ -27,17 +35,39 @@ from hw0.generate import generate
 from hw0.grading import max_ngram_repetition
 
 MULTIHOP = ".context/jacobian-lens/data/evaluations/lens-eval-multihop.json"
+ORDER_OPS = ".context/jacobian-lens/data/evaluations/lens-eval-order-ops.json"
 OUT = "results/calibration.json"
+STATE = "results/calibration_state.json"
 
 BANDS = core.BAND_PRIMARY_CANDIDATES  # [(14, 24), (14, 31)]
-LADDER = [  # (band, k) tried in order until the stop-gate passes
-    *[(b, core.K_ABLATE) for b in BANDS],
-    (BANDS[0], 5),
-    (core.BAND_LIGHT, core.K_ABLATE),
-]
+NEAR_CEILING = 0.90
 
 
-def multihop_accuracy(setup, items, ablator=None, tag="") -> list[bool]:
+def mem() -> str:
+    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e9
+    mps = torch.mps.current_allocated_memory() / 1e9
+    return f"rss={rss:.1f}G mps={mps:.1f}G"
+
+
+def load_state() -> dict:
+    if os.path.exists(STATE):
+        return json.load(open(STATE))
+    return {}
+
+
+def stage(state: dict, key: str, fn):
+    """Run fn() once ever: checkpointed across process restarts."""
+    if key not in state:
+        state[key] = fn()
+        json.dump(state, open(STATE, "w"))
+        torch.mps.empty_cache()
+        print(f"stage[{key}] done ({mem()})", flush=True)
+    else:
+        print(f"stage[{key}] loaded from checkpoint", flush=True)
+    return state[key]
+
+
+def control_accuracy(setup, items, ablator=None, tag="") -> list[bool]:
     """Greedy 8-token completion; hit = target substring appears (case-insensitive)."""
     hits = []
     for i, it in enumerate(items):
@@ -45,7 +75,7 @@ def multihop_accuracy(setup, items, ablator=None, tag="") -> list[bool]:
                      greedy=True)
         hits.append(it["target"].strip().lower() in r.text.lower())
         if i % 20 == 0:
-            print(f"  multihop[{tag}] {i}/{len(items)}", flush=True)
+            print(f"  control[{tag}] {i}/{len(items)} ({mem()})", flush=True)
     return hits
 
 
@@ -57,12 +87,14 @@ def wikitext_top1_match(setup, seqs, ablator) -> float:
                         max_length=128).input_ids.to(setup.device)
         with torch.no_grad():
             ablator.enabled = False
-            clean_logits = setup.hf(ids).logits[0]
-            ablator.exempt_ids = clean_logits.topk(core.K_CLEAN_EXEMPT, dim=-1).indices
+            logits = setup.hf(ids).logits[0]
+            clean_am = logits.argmax(-1)
+            ablator.exempt_ids = logits.topk(core.K_CLEAN_EXEMPT, dim=-1).indices
+            del logits
             ablator.enabled = True
-            abl_logits = setup.hf(ids).logits[0]
+            abl_am = setup.hf(ids).logits[0].argmax(-1)
             ablator.enabled = False
-        m = (clean_logits.argmax(-1) == abl_logits.argmax(-1))
+        m = (clean_am == abl_am)
         matches += int(m.sum().item())
         total += m.numel()
     return matches / total
@@ -71,19 +103,20 @@ def wikitext_top1_match(setup, seqs, ablator) -> float:
 def degenerate_rate(setup, problems, ablator) -> tuple[float, float]:
     """(degenerate fraction, ablated tok/s) over pilot CoT generations."""
     degen, toks, secs = 0, 0, 0.0
-    for p in problems:
+    for i, p in enumerate(problems):
         prompt = core.chat_prompt(setup, p["problem"], "cot")
         t0 = time.time()
         r = generate(setup, prompt, max_new_tokens=640, seed=1, ablator=ablator)
         secs += time.time() - t0
         toks += r.n_new
         degen += (max_ngram_repetition(r.token_ids) > 0.5) or (r.hit_cap and r.n_new >= 640)
+        if i % 10 == 0:
+            print(f"  degen {i}/{len(problems)} ({mem()})", flush=True)
     return degen / len(problems), toks / secs
 
 
 def mcnemar_exact_p(hits_a: list[bool], hits_b: list[bool]) -> float:
-    """Exact McNemar (paired, two-sided) on per-item hit lists (deviation 3:
-    replaces the pre-registered unpaired Fisher, which ignores item pairing)."""
+    """Exact McNemar (paired, two-sided) on per-item hit lists (deviation 3)."""
     from math import comb
     b = sum(1 for x, y in zip(hits_a, hits_b) if x and not y)
     c = sum(1 for x, y in zip(hits_a, hits_b) if not x and y)
@@ -94,27 +127,37 @@ def mcnemar_exact_p(hits_a: list[bool], hits_b: list[bool]) -> float:
     return min(1.0, 2 * tail)
 
 
-def evaluate_rung(setup, items, pilot, wiki, clean_hits, band, k) -> dict:
+def evaluate_rung(setup, state, items, pilot, wiki, clean_hits, band, k) -> dict:
+    tag = f"{band[0]}-{band[1]}:{k}"
     clean_acc = sum(clean_hits) / len(clean_hits)
     rung = {"band": band, "k": k}
     hits = {}
     for mode in ("jspace", "random"):
-        abl = JSpaceAblator(setup, band, k=k, mode=mode).install()
+        def run(mode=mode):
+            abl = JSpaceAblator(setup, band, k=k, mode=mode).install()
+            try:
+                h = control_accuracy(setup, items, ablator=abl, tag=f"{tag}-{mode}")
+                w = wikitext_top1_match(setup, wiki, abl)
+            finally:
+                abl.remove()
+            return {"hits": h, "wikitext": w}
+        r = stage(state, f"rung:{tag}:{mode}", run)
+        hits[mode] = r["hits"]
+        rung[f"control_{mode}"] = sum(r["hits"]) / len(r["hits"])
+        rung[f"wikitext_top1_{mode}"] = r["wikitext"]
+
+    def run_degen():
+        abl = JSpaceAblator(setup, band, k=k).install()
         try:
-            hits[mode] = multihop_accuracy(setup, items, ablator=abl, tag=f"{band}-{mode}")
-            rung[f"multihop_{mode}"] = sum(hits[mode]) / len(hits[mode])
-            rung[f"wikitext_top1_{mode}"] = wikitext_top1_match(setup, wiki, abl)
+            d, t = degenerate_rate(setup, pilot, abl)
         finally:
             abl.remove()
-    abl = JSpaceAblator(setup, band, k=k).install()
-    try:
-        rung["degenerate_rate"], rung["ablated_tok_s"] = degenerate_rate(
-            setup, pilot, abl)
-    finally:
-        abl.remove()
+        return {"degenerate_rate": d, "tok_s": t}
+    d = stage(state, f"rung:{tag}:degen", run_degen)
+    rung["degenerate_rate"], rung["ablated_tok_s"] = d["degenerate_rate"], d["tok_s"]
 
-    rung["j_drop"] = clean_acc - rung["multihop_jspace"]
-    rung["r_drop"] = clean_acc - rung["multihop_random"]
+    rung["j_drop"] = clean_acc - rung["control_jspace"]
+    rung["r_drop"] = clean_acc - rung["control_random"]
     rung["mcnemar_p_drop"] = mcnemar_exact_p(clean_hits, hits["jspace"])
     rung["mcnemar_p_j_vs_random"] = mcnemar_exact_p(hits["random"], hits["jspace"])
     rung["passes_constraints"] = (
@@ -127,22 +170,39 @@ def evaluate_rung(setup, items, pilot, wiki, clean_hits, band, k) -> dict:
 
 def main():
     import faulthandler
-    faulthandler.enable()  # dump a traceback on SIGSEGV/SIGABRT (silent-death forensics)
+    faulthandler.enable()
+    state = load_state()
     setup = core.load()
-    items = json.load(open(MULTIHOP))["items"]
+    mh_items = json.load(open(MULTIHOP))["items"]
+    oo_items = json.load(open(ORDER_OPS))["items"]
     pilot = load_gsm8k(n=30, seed=100, split="train")
     wiki = load_wikitext_heldout(n=50)
 
-    clean_hits = multihop_accuracy(setup, items, tag="clean")
-    clean_acc = sum(clean_hits) / len(clean_hits)
-    report = {"clean_multihop": clean_acc, "rungs": []}
-    print(f"clean multihop accuracy: {clean_acc:.3f} ({sum(clean_hits)}/{len(clean_hits)})")
+    # Pre-registered control choice, checked FIRST: multihop primary; order-ops
+    # fallback if the clean model is not near-ceiling on multihop.
+    mh_clean = stage(state, "clean_multihop",
+                     lambda: control_accuracy(setup, mh_items, tag="clean-mh"))
+    oo_clean = stage(state, "clean_orderops",
+                     lambda: control_accuracy(setup, oo_items, tag="clean-oo"))
+    mh_acc = sum(mh_clean) / len(mh_clean)
+    oo_acc = sum(oo_clean) / len(oo_clean)
+    if mh_acc >= NEAR_CEILING or mh_acc >= oo_acc:
+        control, items, clean_hits = "multihop", mh_items, mh_clean
+    else:
+        control, items, clean_hits = "order-ops", oo_items, oo_clean
+    report = {"clean_multihop": mh_acc, "clean_orderops": oo_acc,
+              "control_used": control,
+              "control_note": ("multihop not near-ceiling on clean Qwen3-4B; "
+                               "order-ops fallback per prereg section 7"
+                               if control == "order-ops" else "multihop primary"),
+              "rungs": []}
+    print(f"clean multihop={mh_acc:.3f} order-ops={oo_acc:.3f} -> control={control}",
+          flush=True)
 
-    # Prereg section 7: evaluate BOTH primary candidates, choose the one maximizing
-    # the positive-control drop subject to constraints+gate; ladder only if none pass.
     chosen = None
-    for band, k in [(b, core.K_ABLATE) for b in BANDS]:
-        rung = evaluate_rung(setup, items, pilot, wiki, clean_hits, band, k)
+    for band in BANDS:
+        rung = evaluate_rung(setup, state, items, pilot, wiki, clean_hits,
+                             band, core.K_ABLATE)
         report["rungs"].append(rung)
         print(json.dumps(rung), flush=True)
     passing = [r for r in report["rungs"] if r["passes_gate"]]
@@ -150,7 +210,7 @@ def main():
         chosen = max(passing, key=lambda r: r["j_drop"])
     else:
         for band, k in [(BANDS[0], 5), (core.BAND_LIGHT, core.K_ABLATE)]:
-            rung = evaluate_rung(setup, items, pilot, wiki, clean_hits, band, k)
+            rung = evaluate_rung(setup, state, items, pilot, wiki, clean_hits, band, k)
             report["rungs"].append(rung)
             print(json.dumps(rung), flush=True)
             if rung["passes_gate"]:
