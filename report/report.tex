@@ -1,0 +1,107 @@
+\documentclass[10pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{booktabs,graphicx,amsmath,microtype}
+\usepackage[hidelinks]{hyperref}
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{6pt}{3pt}
+\titleformat{\section}{\normalsize\bfseries}{\thesection}{0.6em}{}
+\setlength{\parskip}{2pt}
+\begin{document}
+
+\begin{center}
+{\large\bfseries Does chain-of-thought still protect against J-space ablation when problems get hard?}\\[2pt]
+CS 2881 Homework 0 --- \today\ --- code: \texttt{github.com/pgrindehollevik-harvard/cs2881}
+\end{center}
+
+\section{Hypothesis (pre-registered before any experiment; tag \texttt{prereg-v1})}
+Gurnee et al.\ (2026) report that ablating a model's J-space --- zeroing the residual
+stream's projection onto the $k{=}10$ most-active Jacobian-lens directions at every
+position across a mid-layer band --- collapses internal multi-step reasoning while
+sparing shallow capabilities, and that GSM8K solved \emph{with} chain of thought is far
+more robust to this ablation than the same problems answered directly. We tested whether
+that protection persists as problems get harder, on \texttt{Qwen/Qwen3-4B}.
+\textbf{H1} (replication): on GSM8K the random-differenced protection
+$P_D=[R(\text{CoT},J)-R(\text{dir},J)]-[R(\text{CoT},\text{rand})-R(\text{dir},\text{rand})]$
+is $\ge +0.15$, where $R$ = accuracy retention (ablated/clean).
+\textbf{H2} (extension): protection \emph{erodes} with difficulty
+(GSM8K $\to$ MATH-500 $\to$ AIME; within MATH-500, levels 1$\to$5), because
+externalization is bandwidth-limited: each step of a harder problem itself needs more
+un-externalized workspace. Falsification criteria, floor rules, sample sizes, and a
+hypothesis-blind calibration gate were frozen in \texttt{docs/PREREGISTRATION.md} before
+any run; all deviations are logged in \texttt{docs/DEVIATIONS.md}.
+
+\section{Experiment design}
+Two prompting modes (CoT vs.\ direct-answer, both non-thinking mode, matched sampling)
+$\times$ three conditions (clean / J-space ablation / \emph{per-slot norm-matched}
+random-direction ablation) $\times$ three datasets (GSM8K $n{=}150$;
+MATH-500 stratified 30/level; AIME 2024+2025, all 60). The random control removes an
+exactly equal-norm component along random directions at the same (position, layer),
+so anything surviving the $P_D$ subtraction is J-space-specific rather than generic
+damage. Before the main grid may run, a hypothesis-blind stop-gate requires: a
+significant positive-control drop under J-ablation (exact McNemar), $\ge 2\times$ the
+matched-random drop, output degeneration $<10\%$, and ordinary next-token prediction
+on held-out wikitext surviving ($>0.80$ top-1 agreement with clean) --- the paper's
+selectivity signature. Strength (layer band, $k$) is calibrated \emph{only} on these
+criteria, never on CoT-vs-direct gaps.
+
+\section{Experimental details}
+No ablation code exists in the companion repo; we implemented it as forward hooks:
+per (position, band-layer), readout logits $=\mathrm{lm\_head}(\mathrm{rmsnorm}(J_\ell h))$,
+top-10 token ids (recomputed per position and layer, ids in the clean model's top-10
+next-token predictions exempted via a parallel clean stream over the same tokens),
+directions $v_t=J_\ell^{\top}(\gamma\odot W_U[t])$, joint projection removed by
+regularized batched solve. Ablation applies to prompt and every generated token.
+Pre-fitted lens: \texttt{neuronpedia/jacobian-lens} (fit on this exact checkpoint);
+it beats a logit-lens baseline at ranking silent multi-hop intermediates
+(pass@5 $0.41$ vs $0.37$; pass@1 $0.20$ vs $0.19$), validating it before use.
+Percent-depth transfer of the paper's Sonnet band gives candidates
+$\{14\text{--}24, 14\text{--}31\}$ of 36 blocks (light $=14$--$19$).
+Compute: one M4 Pro (48 GB, MPS), 19.3 tok/s clean, 6.2--6.6 tok/s ablated
+(dual streams + per-layer readouts). Runs are chunk-resumable (64-token persistence):
+macOS update preparation repeatedly SIGKILLed the process (90 s lifetimes at the worst),
+which cost wall-clock but, by construction, no data. Grading: \texttt{math-verify} on the
+last \verb|\boxed{}|; artifact classes (no-answer / truncation / degeneration /
+wrong-answer) tracked separately. 7 unit tests certify the intervention (identity when
+disabled, projections verifiably removed, exemption honored, per-slot norm match,
+seeded determinism, chunked $=$ unchunked).
+
+\section{Results}
+\textbf{Positive-control calibration (order-ops fallback; clean multihop was 0.42,
+far from ceiling --- itself a small-model datum).} All four pre-registered rungs
+\emph{failed} the stop-gate, so the main grid did not run on the off-the-shelf lens:
+
+\begin{center}\small
+\begin{tabular}{lcccc}
+\toprule
+Rung & J drop (pts) & random drop & wikitext top-1 (J / rand) & gate\\
+\midrule
+14--24, $k{=}10$ & $-16.4$ ($p{=}.004$) & $-9.1$ & $0.62\,/\,0.79$ & fail\\
+14--31, $k{=}10$ & $-18.2$ & $-9.1$ & $0.58\,/\,0.73$ & fail\\
+14--24, $k{=}5$ & $-14.5$ & $-5.4$ & $0.61\,/\,0.82$ & fail\\
+14--19, $k{=}10$ (light) & $-16.4$ ($p{=}.012$) & $\phantom{-}0.0$ & $0.66\,/\,0.84$ & fail\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The J-directions are causally real on Qwen3-4B --- in the light band, norm-matched
+random damage costs \emph{nothing} while J-ablation costs 16 points, with only 3\%
+degeneration --- but they are not \emph{selective}: 34--42\% of ordinary next-token
+predictions change (paper: ``only mildly perturbed'' on Sonnet 4.5). Per the
+pre-registered contingency (the stock lens targets the final layer; the paper's recipe
+targets the penultimate layer to avoid last-block artifacts), we refit a
+penultimate-target lens and re-ran the ladder once.
+%% PLACEHOLDER: refit ladder outcome, and either the main-grid results (headline
+%% retention-vs-difficulty figure, P_D per dataset, H2 contrast, controls table)
+%% or the negative-replication consolidation.
+
+\section{Analysis}
+%% PLACEHOLDER pending final data. Fixed structure:
+%% (1) verdict on H1/H2 or the negative replication with the calibration table as the
+%%     primary evidence; (2) interpretation: small-model workspace entangled with
+%%     ordinary prediction vs.\ lens-quality limitation --- what each predicts and which
+%%     the refit distinguishes; (3) alternative explanations and residual confounds
+%%     (final-vs-penultimate lens, band transfer by percent depth, order-ops as control);
+%% (4) next with more compute: Qwen3-14B/32B (pre-fitted lenses exist), thinking-mode
+%%     traces, per-level CoT-length covariate.
+
+\end{document}

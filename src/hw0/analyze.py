@@ -128,6 +128,60 @@ def mcnemar_exact(clean, abl):
     return min(1.0, 2 * tail)
 
 
+def trend_model(graded):
+    """Pre-registered trend statistic (prereg 8): logistic regression
+    correct ~ mode x condition x ordinal difficulty, problem-clustered SEs; the
+    registered statistic is the J-vs-random contrast of the three-way interaction."""
+    import pandas as pd
+    import statsmodels.formula.api as smf
+
+    DIFF = {"gsm8k": 1, "aime": 7}  # math500 uses 1 + level (2..6)
+    rows = [{"correct": int(r["correct"]), "mode": r["mode"],
+             "condition": r["condition"], "problem": r["problem_id"],
+             "difficulty": DIFF.get(r["dataset"], 1 + r["level"])}
+            for r in graded if r["condition"] in ("clean", "jspace", "random")]
+    if not rows:
+        return None
+    df = pd.DataFrame(rows)
+    try:
+        m = smf.logit("correct ~ C(mode)*C(condition, Treatment('clean'))*difficulty",
+                      data=df).fit(disp=0, cov_type="cluster",
+                                   cov_kwds={"groups": df["problem"]})
+        out = {"n": len(df), "terms": {}}
+        for t in m.params.index:
+            if "difficulty" in t and ("jspace" in t or "random" in t):
+                out["terms"][t] = {"coef": float(m.params[t]),
+                                   "se": float(m.bse[t]), "p": float(m.pvalues[t])}
+        return out
+    except Exception as e:  # separation/singularity on partial data must not kill analysis
+        return {"error": str(e)}
+
+
+def length_covariate(graded):
+    """Retention-vs-CoT-length within dataset (prereg 8): does damage scale with the
+    number of ablated generation steps? Correlation of per-problem clean CoT length
+    with survival under J-ablation."""
+    from collections import defaultdict as dd
+    by = dd(dict)
+    for r in graded:
+        if r["mode"] == "cot" and r["condition"] in ("clean", "jspace"):
+            by[(r["dataset"], r["problem_id"])][r["condition"]] = (
+                r["n_new"], bool(r["correct"]))
+    out = {}
+    for ds in DIFFICULTY:
+        pairs = [(v["clean"][0], int(v["jspace"][1]))
+                 for (d, _), v in by.items()
+                 if d == ds and "clean" in v and "jspace" in v and v["clean"][1]]
+        if len(pairs) >= 20:
+            x = np.array([p[0] for p in pairs], float)
+            y = np.array([p[1] for p in pairs], float)
+            r = float(np.corrcoef(x, y)[0, 1]) if x.std() > 0 else float("nan")
+            out[ds] = {"n": len(pairs), "pointbiserial_r": r,
+                       "mean_len_survived": float(x[y == 1].mean()) if y.any() else None,
+                       "mean_len_died": float(x[y == 0].mean()) if (y == 0).any() else None}
+    return out
+
+
 def boot_ci_2strata(fn, tables_a, tables_b, n=N_BOOT):
     """Stratified cluster bootstrap for cross-dataset contrasts: resample each
     dataset's problems independently, preserving per-dataset sample sizes."""
@@ -227,8 +281,8 @@ def main():
     summary["cot_length_mean"] = {c: float(np.mean(v)) for c, v in lengths.items()
                                   if "-cot-" in c}
     summary["direct_compliance"] = {c: float(np.mean(v)) for c, v in compliance.items()}
-    # TODO(analysis pass): logistic trend model correct ~ mode x condition x difficulty
-    # with problem-clustered SEs (statsmodels), and retention-vs-CoT-length covariate.
+    summary["trend_model"] = trend_model(graded)
+    summary["cot_length_covariate"] = length_covariate(graded)
 
     os.makedirs(FIGDIR, exist_ok=True)
     _headline_figure(summary)
