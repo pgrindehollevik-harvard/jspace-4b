@@ -1,7 +1,7 @@
-# Learnings — the experiment, explained end to end
+# Extended notes: design rationale and lessons
 
-*A running consolidation of the lessons written during the work, so the person submitting
-this can genuinely explain every choice. Final version completed after the results land.*
+*Companion to the two-page report: the reasoning behind each design choice, the findings in
+narrative form, and the engineering lessons — material the report's page budget cannot hold.*
 
 ## 1. The object under study
 
@@ -98,17 +98,3 @@ this can genuinely explain every choice. Final version completed after the resul
   the deciding data existed, and a discriminating experiment proposed for the two
   surviving explanations (scale vs. lens quality: rerun on 14B/32B, where they predict
   opposite gate outcomes).
-
-## Questions you should be able to answer before submitting
-
-1. Why ablate the *projection onto* J-lens directions instead of steering along them?
-2. Why exempt tokens in the clean model's top-10 predictions? What would go wrong
-   without the exemption?
-3. Why must the random control be norm-matched *per slot* rather than on average?
-4. Why was calibration forbidden from looking at CoT-vs-direct accuracy?
-5. What does "the pen lens behaved like the random control" tell you, and why does it
-   *strengthen* the stock-lens finding?
-6. Why is P_D a triple difference? What rival explanation does each layer remove?
-7. Why did we refuse to run the grid after the gate failed, even though we had time?
-8. What single experiment best separates the two surviving explanations, and what does
-   each predict?
