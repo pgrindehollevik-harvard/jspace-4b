@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Overnight chain: penultimate-lens fit -> ladder re-run with the new lens ->
 # grid if the gate passes. Everything restart-on-crash; all checkpointed.
-cd /Users/peterflo/conductor/workspaces/hw0-v1/helsinki
+cd "$(dirname "$0")/.."
 log() { echo "$(date '+%F %T') $1" >> logs/supervisor.log }
 export PYTORCH_ENABLE_MPS_FALLBACK=1
 

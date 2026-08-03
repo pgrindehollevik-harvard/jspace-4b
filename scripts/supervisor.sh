@@ -4,7 +4,7 @@
 # Silent SIGKILLs during sustained MPS load are an observed failure mode on this
 # machine; the policy is: restart forever WHILE progress is being made, give up
 # only after 8 consecutive restarts with no new work recorded.
-cd /Users/peterflo/conductor/workspaces/hw0-v1/helsinki
+cd "$(dirname "$0")/.."
 log() { echo "$(date '+%F %T') $1" >> logs/supervisor.log }
 
 restarts=0
