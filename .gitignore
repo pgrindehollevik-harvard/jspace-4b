@@ -9,3 +9,7 @@ logs/
 results/partials/
 results/lens_fit/
 *.tmp.*
+report/*.aux
+report/*.log
+report/*.out
+report/report.pdf
