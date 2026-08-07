@@ -7,7 +7,7 @@ quality saturates fast; the paper's own lenses beat logit lens from ~10 prompts)
 max_seq_len 128, target_layer=-2. jlens.fit checkpoints per prompt and resumes natively,
 so the machine's SIGKILL regime costs at most one prompt of backward passes.
 
-Usage: .venv/bin/python -u -m hw0.fit_lens   (writes results/lens_fit/qwen3-4b_pen_n32.pt)
+Usage: .venv/bin/python -u -m jspace.fit_lens   (writes results/lens_fit/qwen3-4b_pen_n32.pt)
 """
 
 import os
@@ -18,7 +18,7 @@ import transformers
 import jlens
 from jlens.examples import load_wikitext_prompts
 
-from hw0.core import MODEL_NAME
+from jspace.core import MODEL_NAME
 
 OUT_DIR = "results/lens_fit"
 CKPT = os.path.join(OUT_DIR, "ckpt.pt")

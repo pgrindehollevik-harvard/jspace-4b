@@ -6,9 +6,9 @@ Run: .venv/bin/python -m pytest tests/ -v   (loads Qwen3-4B on MPS once; ~2-3 mi
 import pytest
 import torch
 
-from hw0 import core
-from hw0.ablation import JSpaceAblator
-from hw0.generate import generate
+from jspace import core
+from jspace.ablation import JSpaceAblator
+from jspace.generate import generate
 
 PROMPT = "Fact: The currency used in the country shaped like a boot is"
 
@@ -142,7 +142,7 @@ def test_generation_determinism_and_dual_stream(setup):
 
 
 def test_chunked_resumable_matches_unchunked(setup):
-    from hw0.generate import generate_resumable
+    from jspace.generate import generate_resumable
     prompt = core.chat_prompt(setup, "What is 6 * 7?", "cot")
     band = core.BAND_PRIMARY_CANDIDATES[0]
     abl = JSpaceAblator(setup, band).install()

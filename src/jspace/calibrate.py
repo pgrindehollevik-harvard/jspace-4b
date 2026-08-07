@@ -18,7 +18,7 @@ OOM kill — observed twice on this 48GB machine) restarts from a clean process 
 finished stages loaded. torch.mps.empty_cache() runs between stages; memory telemetry is
 printed with each progress line.
 
-Usage: .venv/bin/python -u -m hw0.calibrate     (writes results/calibration.json)
+Usage: .venv/bin/python -u -m jspace.calibrate     (writes results/calibration.json)
 """
 
 import json
@@ -28,19 +28,19 @@ import time
 
 import torch
 
-from hw0 import core
-from hw0.ablation import JSpaceAblator
-from hw0.data import load_gsm8k, load_wikitext_heldout
-from hw0.generate import generate, generate_resumable
-from hw0.grading import max_ngram_repetition
+from jspace import core
+from jspace.ablation import JSpaceAblator
+from jspace.data import load_gsm8k, load_wikitext_heldout
+from jspace.generate import generate, generate_resumable
+from jspace.grading import max_ngram_repetition
 
-from hw0.core import jlens_data_dir
+from jspace.core import jlens_data_dir
 
 MULTIHOP = f"{jlens_data_dir()}/data/evaluations/lens-eval-multihop.json"
 ORDER_OPS = f"{jlens_data_dir()}/data/evaluations/lens-eval-order-ops.json"
-# A locally fitted lens (HW0_LENS_PATH) gets its own namespaced ladder run, so the
+# A locally fitted lens (JSPACE_LENS_PATH) gets its own namespaced ladder run, so the
 # original verdict's provenance is preserved.
-_SUFFIX = "_pen" if os.environ.get("HW0_LENS_PATH") else ""
+_SUFFIX = "_pen" if os.environ.get("JSPACE_LENS_PATH") else ""
 OUT = f"results/calibration{_SUFFIX}.json"
 STATE = f"results/calibration_state{_SUFFIX}.json"
 

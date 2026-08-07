@@ -24,8 +24,8 @@ from dataclasses import dataclass, field
 import torch
 from transformers import DynamicCache
 
-from hw0.core import Setup, SAMPLING, K_CLEAN_EXEMPT
-from hw0.ablation import JSpaceAblator
+from jspace.core import Setup, SAMPLING, K_CLEAN_EXEMPT
+from jspace.ablation import JSpaceAblator
 
 CHUNK = 64  # tokens between persistence points in generate_resumable
 

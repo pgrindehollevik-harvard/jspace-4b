@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 log() { echo "$(date '+%F %T') $1" >> logs/supervisor.log }
 
 restarts=0
-until .venv/bin/python -u -m hw0.calibrate >> logs/calibrate.log 2>&1; do
+until .venv/bin/python -u -m jspace.calibrate >> logs/calibrate.log 2>&1; do
   code=$?
   restarts=$((restarts+1))
   log "calibration crashed (restart $restarts, exit=$code) — resuming from checkpoint"
@@ -34,7 +34,7 @@ fi
 export HF_HUB_OFFLINE=1
 stalled=0
 last_lines=-1
-until .venv/bin/python -u -m hw0.run_grid >> logs/grid.log 2>&1; do
+until .venv/bin/python -u -m jspace.run_grid >> logs/grid.log 2>&1; do
   code=$?
   lines=$(wc -l < results/grid.jsonl 2>/dev/null || echo 0)
   if [ "$lines" -gt "$last_lines" ]; then stalled=0; else stalled=$((stalled+1)); fi

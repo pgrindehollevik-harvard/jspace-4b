@@ -10,7 +10,7 @@ rank is the min over single-token synonyms. We report k in {1, 5, 10}; the gate 
 J-lens vs vanilla logit lens (use_jacobian=False) on pass@1 and pass@5, identical
 treatment for both.
 
-Usage: .venv/bin/python -m hw0.validate_lens
+Usage: .venv/bin/python -m jspace.validate_lens
 """
 
 import json
@@ -18,13 +18,13 @@ import sys
 
 import torch
 
-from hw0 import core
+from jspace import core
 
-from hw0.core import jlens_data_dir
+from jspace.core import jlens_data_dir
 
 ORDER_OPS = f"{jlens_data_dir()}/data/evaluations/lens-eval-order-ops.json"
 MULTIHOP = f"{jlens_data_dir()}/data/evaluations/lens-eval-multihop.json"
-OUT = ("results/lens_validation_pen.json" if __import__("os").environ.get("HW0_LENS_PATH")
+OUT = ("results/lens_validation_pen.json" if __import__("os").environ.get("JSPACE_LENS_PATH")
        else "results/lens_validation.json")
 KS = (1, 5, 10)
 

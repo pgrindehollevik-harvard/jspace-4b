@@ -1,57 +1,47 @@
-# Does chain-of-thought still protect against J-space ablation when problems get hard?
+# Does Chain-of-Thought Still Protect Against J-Space Ablation When Problems Get Hard?
 
-CS 2881 (Harvard, Fall 2026) Homework 0. Extends the GSM8K chain-of-thought result of
+**Peter Flo** (Harvard University) · [paper (pdf)](paper.pdf) · [blog post](https://pflo.org/jspace-4b.html) · abstract accepted at [NEMI 2026](https://nemiconf.github.io/summer26/)
+
+A pre-registered replication and extension of the J-space ablation experiments from
 [*Verbalizable Representations Form a Global Workspace in Language Models*](https://transformer-circuits.pub/2026/workspace/index.html)
-(Gurnee et al., Anthropic, July 2026) to a difficulty ladder — GSM8K → MATH-500 → AIME — on
-`Qwen/Qwen3-4B`, run entirely on one Apple M4 Pro (MPS).
+(Gurnee et al., Anthropic, 2026) on `Qwen/Qwen3-4B`.
 
-**Report:** [`report.pdf`](report.pdf)
+**Result in one line:** the J-lens directions are causally real at 4B scale, but the
+workspace/automatic separation the paper's chain-of-thought result rests on does not
+transfer, so the pre-registered stop-gate correctly refused to run the main experiment.
+The workspace signature may be an emergent property of scale.
 
-**Result in one line:** a pre-registered negative replication — J-lens directions on
-Qwen3-4B are causally load-bearing but not selectively separable from ordinary
-prediction, so the stop-gate failed (8 rungs, 2 lenses) and the pre-registered
-CoT-vs-difficulty grid was correctly never run.
+![Dose-response ladder across eight configurations and two lenses](results/figures/ladder.png)
 
-## Question
+## Key findings
 
-The paper finds that J-space ablation (zeroing the residual stream's projection onto the top-10
-most active J-lens directions, every position, across a mid-layer band) devastates direct
-answering on GSM8K but largely spares chain-of-thought answering — written reasoning substitutes
-for the internal workspace. We test whether that protection **persists, erodes, or collapses** as
-problem difficulty increases.
+1. **Causally real.** In the lightest layer band, ablating the top-10 J-lens directions
+   per position costs 16 points on a two-step reasoning control while *exactly
+   norm-matched random ablation costs zero* (n=55 paired items, exact McNemar p=.012),
+   with outputs remaining coherent.
+2. **Not selective.** The same ablation changes 34 to 42 percent of ordinary next-token
+   predictions on held-out text, roughly double the matched-random arm, where the source
+   paper reports ordinary prediction left largely intact at frontier scale.
+3. **A diagnostic null.** An undertrained refit lens (n=32 prompts) behaves identically
+   to the random control under ablation, which corroborates that the reference lens's
+   J-vs-random gap reflects real structure.
 
 ## Repository structure
 
 | Path | Contents |
 |---|---|
-| `docs/PREREGISTRATION.md` | Hypotheses, full design, analysis plan — frozen at tag `prereg-v1` **before** any experiment ran |
-| `docs/DEVIATIONS.md` | Timestamped log of every deviation from the pre-registration |
-| `docs/LEARNINGS.md` | The experiment explained end to end, plus systems lessons |
-| `src/hw0/` | Implementation: ablation hooks, resumable generation, datasets, grading, calibration, lens fitting, grid runner, analysis, figure |
-| `tests/` | 7 unit tests for the intervention (exemption rule, projection correctness, clean-path identity, chunked-resume equivalence) |
+| `paper.pdf` | The write-up (also on [pflo.org](https://pflo.org/papers/jspace-4b.pdf)) |
+| `docs/PREREGISTRATION.md` | Hypotheses, design, and analysis plan, frozen at tag `prereg-v1` **before** any experiment ran |
+| `docs/DEVIATIONS.md` | Timestamped log of every departure from the pre-registration |
+| `docs/LEARNINGS.md` | Extended design rationale and lessons |
+| `src/jspace/` | Ablation hooks, resumable generation, datasets, grading, calibration, lens fitting, grid runner, analysis |
+| `tests/` | 7 unit tests certifying the intervention |
+| `results/` | The evidence: both 8-rung calibration ladders with per-item outcomes, lens-validation artifacts, figures |
 | `scripts/` | Crash-tolerant supervisors for unattended runs |
-| `results/` | Committed evidence: `calibration.json` + `calibration_pen.json` (the 8-rung ladders, incl. per-item hits in the `_state` files), `lens_validation*.json` (gate 1), `figures/` |
-| `report/` | Report source; built PDF is copied to `report.pdf` in the root |
 
 The main grid (`results/grid.jsonl`) intentionally does not exist: the pre-registered
-stop-gate failed, so per `docs/PREREGISTRATION.md` section 7 the grid was not run. The
-fitted penultimate lens (445 MB) exceeds GitHub's file limit and is not committed;
-regenerate it with `hw0.fit_lens` (~5.7 h on an M4 Pro, checkpointed and resumable) —
-its validation artifact is committed as `results/lens_validation_pen.json`.
-
-## Key external artifacts
-
-- Paper: https://transformer-circuits.pub/2026/workspace/index.html (arXiv:2607.15495)
-- Companion code (lens fitting/application; **contains no ablation code** — we implement that here):
-  https://github.com/anthropics/jacobian-lens
-- Pre-fitted Jacobian lens for Qwen3-4B: [`neuronpedia/jacobian-lens`](https://huggingface.co/neuronpedia/jacobian-lens),
-  file `qwen3-4b/jlens/Salesforce-wikitext/Qwen3-4B_jacobian_lens.pt` (fit on the identical checkpoint)
-- Model: [`Qwen/Qwen3-4B`](https://huggingface.co/Qwen/Qwen3-4B) (non-thinking mode for all conditions)
-- Datasets: [`openai/gsm8k`](https://huggingface.co/datasets/openai/gsm8k) (test);
-  [`HuggingFaceH4/MATH-500`](https://huggingface.co/datasets/HuggingFaceH4/MATH-500) (test);
-  AIME 2024 I+II = [`Maxwell-Jia/AIME_2024`](https://huggingface.co/datasets/Maxwell-Jia/AIME_2024),
-  AIME 2025 I+II = [`yentinglin/aime_2025`](https://huggingface.co/datasets/yentinglin/aime_2025) (config `default`)
-- Grading: [`math-verify`](https://github.com/huggingface/math-verify)
+stop-gate failed at all eight settings across two lenses, so per the pre-registration
+the grid was not run. That refusal is the result.
 
 ## Setup
 
@@ -61,33 +51,48 @@ git clone https://github.com/anthropics/jacobian-lens vendor/jacobian-lens
 uv pip install --python .venv/bin/python -e . -e vendor/jacobian-lens
 ```
 
-`-e .` installs the `hw0` package and every dependency (torch, transformers>=5.5,
-datasets, math-verify, statsmodels, pytest, ...) from `pyproject.toml`. The model
-(~8 GB) and the stock lens (~437 MB) download from HF Hub on first run.
+The model (~8 GB) and the pre-fitted lens (~437 MB, from
+[`neuronpedia/jacobian-lens`](https://huggingface.co/neuronpedia/jacobian-lens))
+download from HF Hub on first run. Experiments ran on a single Apple M4 Pro (48 GB, MPS);
+everything is device-agnostic.
 
 ## Reproducing the results
 
-Every step is resumable (stage- or chunk-level checkpoints); rerunning a completed step
-loads its checkpoint. Order matters — each stage gates the next. This reproduces the
-submission's actual path, including the pre-registered contingency:
+Each stage gates the next and every step is resumable (stage- or chunk-level checkpoints):
 
 ```bash
-.venv/bin/python -m pytest tests/           # 7 intervention-correctness tests (loads model)
-.venv/bin/python -u -m hw0.validate_lens    # gate 1 (stock lens) -> results/lens_validation.json
-.venv/bin/python -u -m hw0.calibrate        # gate 2: hypothesis-blind ladder + stop-gate
-                                            #   -> results/calibration.json  (verdict: FAIL)
-.venv/bin/python -u -m hw0.fit_lens         # contingency (prereg 5.7): penultimate lens, ~5.7h
-export HW0_LENS_PATH=results/lens_fit/qwen3-4b_pen_n32.pt
-.venv/bin/python -u -m hw0.validate_lens    # gate 1 for the refit -> lens_validation_pen.json
-.venv/bin/python -u -m hw0.calibrate        # refit ladder -> calibration_pen.json (verdict: FAIL)
-unset HW0_LENS_PATH
-.venv/bin/python -m hw0.fig_ladder          # the report's figure, from the two calibration JSONs
-cd report && pdflatex report.tex && cp report.pdf ../report.pdf
+.venv/bin/python -m pytest tests/              # intervention-correctness tests
+.venv/bin/python -u -m jspace.validate_lens    # gate 1 -> results/lens_validation.json
+.venv/bin/python -u -m jspace.calibrate        # gate 2: hypothesis-blind ladder + stop-gate
+                                               #   -> results/calibration.json (verdict: FAIL)
+.venv/bin/python -u -m jspace.fit_lens         # contingency: penultimate-target lens, ~5.7h
+export JSPACE_LENS_PATH=results/lens_fit/qwen3-4b_pen_n32.pt
+.venv/bin/python -u -m jspace.validate_lens    # gate 1 for the refit
+.venv/bin/python -u -m jspace.calibrate        # refit ladder -> calibration_pen.json (FAIL)
+unset JSPACE_LENS_PATH
+.venv/bin/python -m jspace.fig_ladder          # regenerates the figure from the two JSONs
 ```
 
-`hw0.run_grid` and `hw0.analyze` implement the pre-registered main experiment; they
-refuse to run / have nothing to analyze because the stop-gate verdict is FAIL — that
-refusal is the submission's result. For unattended runs on a laptop,
-`scripts/supervisor.sh` and `scripts/fit_supervisor.sh` chain the stages with
-progress-aware crash restarts (`docs/LEARNINGS.md` section 4 explains why). The
-report's table and figure regenerate from `results/calibration*.json` via `hw0.fig_ladder`.
+`jspace.run_grid` and `jspace.analyze` implement the pre-registered main experiment; they
+refuse to run while the stop-gate verdict is FAIL. The fitted penultimate lens (445 MB)
+exceeds GitHub's file limit and is not committed; `jspace.fit_lens` regenerates it
+(checkpointed per prompt).
+
+## Citing
+
+```bibtex
+@misc{flo2026jspace,
+  author = {Flo, Peter},
+  title  = {Does Chain-of-Thought Still Protect Against J-Space Ablation When Problems Get Hard?},
+  year   = {2026},
+  note   = {Abstract accepted at the New England Mechanistic Interpretability Workshop (NEMI 2026)},
+  url    = {https://github.com/pgrindehollevik-harvard/jspace-4b}
+}
+```
+
+## License
+
+MIT for the code in this repository. The companion
+[jacobian-lens](https://github.com/anthropics/jacobian-lens) library (cloned at setup,
+not vendored here) is Apache-2.0; models and datasets downloaded at run time are subject
+to their own licenses.

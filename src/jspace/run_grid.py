@@ -9,7 +9,7 @@ Every generation appends one JSON line to results/grid.jsonl:
    hit_cap, norm_log, seconds, band, k}
 Already-present (cell, problem_id, seed_idx) triples are skipped on restart.
 
-Usage: .venv/bin/python -m hw0.run_grid [--band a,b] [--dataset gsm8k|math500|aime]
+Usage: .venv/bin/python -m jspace.run_grid [--band a,b] [--dataset gsm8k|math500|aime]
 The band/k come from results/calibration.json unless overridden.
 """
 
@@ -22,11 +22,11 @@ import traceback
 
 import torch
 
-from hw0 import core
-from hw0.ablation import JSpaceAblator
-from hw0.data import CAPS, load_aime, load_gsm8k, load_math500
-from hw0.generate import generate_resumable
-from hw0.grading import max_ngram_repetition
+from jspace import core
+from jspace.ablation import JSpaceAblator
+from jspace.data import CAPS, load_aime, load_gsm8k, load_math500
+from jspace.generate import generate_resumable
+from jspace.grading import max_ngram_repetition
 
 PARTIALS = "results/partials"
 

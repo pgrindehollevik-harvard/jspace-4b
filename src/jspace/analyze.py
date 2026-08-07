@@ -11,7 +11,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from hw0.grading import grade
+from jspace.grading import grade
 
 GRID = "results/grid.jsonl"
 GRADED = "results/graded.jsonl"

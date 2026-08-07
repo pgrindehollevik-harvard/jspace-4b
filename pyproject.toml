@@ -1,5 +1,5 @@
 [project]
-name = "hw0"
+name = "jspace"
 version = "0.1.0"
 description = "CS 2881 HW0: J-space ablation vs chain-of-thought across problem difficulty on Qwen3-4B"
 requires-python = ">=3.10"
@@ -19,4 +19,4 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/hw0"]
+packages = ["src/jspace"]

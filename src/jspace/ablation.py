@@ -23,7 +23,7 @@ that are synced once per generation via pop_norm_summary().
 
 import torch
 
-from hw0.core import Setup, K_ABLATE, K_CLEAN_EXEMPT
+from jspace.core import Setup, K_ABLATE, K_CLEAN_EXEMPT
 
 _RAND_BANK_SIZE = 4096
 

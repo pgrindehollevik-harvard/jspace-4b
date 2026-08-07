@@ -4,7 +4,7 @@
 Any deviation from this document is logged in `docs/DEVIATIONS.md` with a timestamp and rationale.
 
 - Paper being extended: Gurnee et al., *Verbalizable Representations Form a Global Workspace in Language Models*, Transformer Circuits (Anthropic), July 2026. https://transformer-circuits.pub/2026/workspace/index.html
-- Assignment: https://boazbk.github.io/mltheoryseminar/hw0-2026/
+- Task brief: replicate and extend the paper's GSM8K chain-of-thought ablation result on Qwen3-4B across a difficulty ladder (GSM8K, MATH-500, AIME)
 - Model: `Qwen/Qwen3-4B` (original hybrid checkpoint, apache-2.0)
 - Lens: pre-fitted Jacobian lens `neuronpedia/jacobian-lens` → `qwen3-4b/jlens/Salesforce-wikitext/Qwen3-4B_jacobian_lens.pt` (fit on this exact checkpoint per its config.yaml)
 - Compute: one Apple M4 Pro, 48 GB unified memory, PyTorch MPS
@@ -47,7 +47,7 @@ was measured). Each opposite outcome is directly visible in the headline figure 
 
 **We commit to reporting whichever outcome occurs**, including "Qwen3-4B loses coherence before any
 selective workspace effect is measurable" (the paper's own small-model warning about Haiku 4.5) —
-that too answers the assignment's question and will be written up as the finding if it is what happens.
+that too answers the research question and will be written up as the finding if it is what happens.
 
 ## 3. Experimental conditions
 
@@ -76,7 +76,7 @@ the cap is flagged cap-truncated; truncation-adjusted accuracy is reported along
 | MATH-500 | `HuggingFaceH4/MATH-500`, split `test` (500) | 150, stratified 30/level | clean 1, J 1, random 1 (n=100) | 1 each (random n=100) |
 | AIME | `Maxwell-Jia/AIME_2024` (30 = 2024 I+II, MIT) + `yentinglin/aime_2025` config `default` (30 = 2025 I+II) | all 60 | clean 2, J 2, random 1 | 4 each |
 
-The **exact AIME source** (assignment requirement): AIME 2024 I & II from `Maxwell-Jia/AIME_2024`
+The **exact AIME source** (stated per the task brief): AIME 2024 I & II from `Maxwell-Jia/AIME_2024`
 (rows keyed `2024-I-k`/`2024-II-k`) and AIME 2025 I & II from `yentinglin/aime_2025` (config
 `default`, split `train`). Answers are integers 0–999.
 

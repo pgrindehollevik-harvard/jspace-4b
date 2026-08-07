@@ -1,27 +1,58 @@
-\documentclass[10pt]{article}
-\usepackage[margin=0.75in]{geometry}
-\usepackage{lmodern}
-\usepackage{booktabs,graphicx,amsmath,microtype}
-\usepackage[hidelinks]{hyperref}
+\documentclass[11pt]{article}
+\usepackage[margin=0.92in,top=0.85in]{geometry}
+\usepackage[sc]{mathpazo}
+\linespread{1.02}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs,graphicx,amsmath,microtype,xcolor}
+\definecolor{linkblue}{RGB}{26,45,95}
+\usepackage[hidelinks,colorlinks=true,linkcolor=linkblue,urlcolor=linkblue,citecolor=linkblue]{hyperref}
 \usepackage{titlesec}
-\titlespacing*{\section}{0pt}{6pt}{3pt}
-\titleformat{\section}{\normalsize\bfseries}{\thesection}{0.6em}{}
-\setlength{\parskip}{2pt}
+\titlespacing*{\section}{0pt}{10pt}{4pt}
+\titleformat{\section}{\large\scshape}{\thesection}{0.7em}{}
+\usepackage[font=small,labelfont=bf,skip=6pt]{caption}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyhead[R]{\small\itshape Preprint \,$\cdot$\, August 2026}
+\fancyfoot[C]{\small\thepage}
+\setlength{\parskip}{3pt}
 \begin{document}
 
 \begin{center}
-{\large\bfseries Does chain-of-thought still protect against J-space ablation when problems get hard?}\\[2pt]
-CS 2881 Homework 0 \,$\cdot$\, \today\ \,$\cdot$\, code: \texttt{github.com/pgrindehollevik-harvard/cs2881}
+{\LARGE\scshape Does Chain-of-Thought Still Protect Against\\[3pt] J-Space Ablation When Problems Get Hard?}\\[14pt]
+{\large Peter Flo}\\[3pt]
+{\small Harvard University \,$\cdot$\, \href{https://pflo.org}{pflo.org}}\\[4pt]
+{\small Abstract accepted at the New England Mechanistic Interpretability Workshop (NEMI 2026)}\\[6pt]
+{\small Code and full records: \href{https://github.com/pgrindehollevik-harvard/jspace-4b}{\texttt{github.com/pgrindehollevik-harvard/jspace-4b}}}
 \end{center}
 
+\vspace{4pt}
+\begin{center}
+\begin{minipage}{0.92\linewidth}
+\small
+\textbf{Abstract.} Gurnee et al.\ (2026) show that ablating a model's J-space (the residual-stream
+projections onto its most active Jacobian-lens directions) selectively impairs internal multi-step
+reasoning while leaving ordinary next-token prediction largely intact, and that written
+chain-of-thought protects against the ablation. We ask whether this workspace signature transfers
+to small open models, via a pre-registered replication on Qwen3-4B gated on reproducing both of the
+paper's signatures before the main experiment could run. The gate failed at eight settings across
+two lenses, in an informative pattern: the J-lens directions are causally real at 4B (in the
+lightest band, ablation costs 16 points on a reasoning control while exactly norm-matched random
+ablation costs zero; $n{=}55$, exact McNemar $p{=}.012$), but they are not selective (34 to 42
+percent of ordinary next-token predictions change). The workspace/automatic separation may be an
+emergent property of scale, a hypothesis directly testable with the public lens suite (1.7B to 32B).
+\end{minipage}
+\end{center}
+\vspace{6pt}
 \section{Hypothesis (pre-registered before any experiment; tag \texttt{prereg-v1})}
-Gurnee et al.\ (2026) show that a model's ``J-space'' can be deleted: at every token
+Gurnee et al.~\cite{gurnee2026} show that a model's ``J-space'' can be deleted: at every token
 position, across a band of middle layers, one zeroes the residual stream's projection
 onto the $k{=}10$ most active Jacobian-lens directions. In their frontier models this
 deletion destroys internal multi-step reasoning, spares shallow skills, and, most
 strikingly, spares GSM8K \emph{when the model writes its reasoning out}. Written
 chain-of-thought appears to substitute for the internal workspace. We tested whether
-that protection survives on a much smaller model, \texttt{Qwen/Qwen3-4B}, and whether
+that protection survives on a much smaller model, \texttt{Qwen/Qwen3-4B}~\cite{qwen3}, and whether
 it survives increasing difficulty. \textbf{H1} (replication): on GSM8K, chain-of-thought
 protects more than direct answering does, beyond what matched random damage explains.
 Formally, the random-differenced protection
@@ -53,14 +84,14 @@ layer band and $k$) is calibrated only against these gauges. The calibration nev
 a CoT-vs-direct comparison, so it cannot be tuned toward the hypothesis.
 
 \section{Experimental details}
-The companion repository provides the lens but no ablation code, so we implemented the
+The companion repository~\cite{jlens} provides the lens but no ablation code, so we implemented the
 intervention as forward hooks. At each (position, band layer): compute readout logits
 $\mathrm{lm\_head}(\mathrm{rmsnorm}(J_\ell h))$; take the top-10 token ids, recomputed
 independently per position and layer; exempt any id in the clean model's top-10
 next-token predictions (a parallel clean stream over the same tokens supplies these);
 form directions $v_t=J_\ell^{\top}(\gamma\odot W_U[t])$; remove their joint projection
 by a regularized batched solve. Ablation applies to the prompt and to every generated
-token. The lens is the pre-fitted \texttt{neuronpedia/jacobian-lens} artifact, fit on
+token. The lens is the pre-fitted \texttt{neuronpedia/jacobian-lens} artifact~\cite{neuronpedia}, fit on
 this exact checkpoint. We validated it before use: it beats a logit-lens baseline at
 ranking silent multi-hop intermediates (pass@5 $0.41$ vs $0.37$; pass@1 $0.20$ vs
 $0.19$), though not on arithmetic order-of-operations readouts at rank 1; the
@@ -72,7 +103,7 @@ calibration rungs (median ${\approx}6$; the ablated pass runs two streams plus
 per-layer readouts). Generation is chunk-resumable with 64-token persistence, which
 mattered: macOS update preparation repeatedly SIGKILLed the process (90\,s lifetimes at
 the worst), costing wall-clock but, by construction, no data. Grading uses
-\texttt{math-verify} on the last \verb|\boxed{}|; no-answer, truncation, degeneration,
+\texttt{math-verify}~\cite{mathverify} on the last \verb|\boxed{}|; no-answer, truncation, degeneration,
 and wrong-answer are tracked as separate classes. Seven unit tests certify the
 intervention: exact identity when disabled, projections verifiably removed, the
 exemption rule honored, per-slot norm matching, seeded determinism, and chunked equal
@@ -120,7 +151,7 @@ corroborate the stock lens's J-vs-random gap as real structure; deviation 4's
 registered confound means we treat that reading as suggestive rather than established.
 
 \begin{center}
-\includegraphics[width=\linewidth]{../results/figures/ladder.pdf}
+\includegraphics[width=0.86\linewidth]{../results/figures/ladder.pdf}
 \end{center}
 
 \section{Analysis of results}
@@ -148,5 +179,17 @@ failing. Also: a full-budget penultimate lens, and thinking-mode traces. All cod
 prompts, seeds, the full 8-rung calibration records (including per-item outcomes), and
 the crash-tolerant pipeline are in the repository for exact reuse. The main grid's
 records intentionally do not exist.
+
+\begin{thebibliography}{9}\small
+\bibitem{gurnee2026} W.~Gurnee et al. Verbalizable Representations Form a Global Workspace in Language Models. \emph{Transformer Circuits Thread}, Anthropic, 2026. \url{https://transformer-circuits.pub/2026/workspace/index.html}
+\bibitem{qwen3} Qwen Team. Qwen3 Technical Report. arXiv:2505.09388, 2025.
+\bibitem{cobbe2021} K.~Cobbe et al. Training Verifiers to Solve Math Word Problems. arXiv:2110.14168, 2021.
+\bibitem{hendrycks2021} D.~Hendrycks et al. Measuring Mathematical Problem Solving with the MATH Dataset. arXiv:2103.03874, 2021.
+\bibitem{lightman2023} H.~Lightman et al. Let's Verify Step by Step. arXiv:2305.20050, 2023. (Source of the MATH-500 subset, \texttt{HuggingFaceH4/MATH-500}.)
+\bibitem{aime} AIME 2024 I/II and 2025 I/II via Hugging Face: \texttt{Maxwell-Jia/AIME\_2024}; \texttt{yentinglin/aime\_2025}.
+\bibitem{jlens} Anthropic. \texttt{jacobian-lens}: companion code for the global workspace paper. \url{https://github.com/anthropics/jacobian-lens}, 2026.
+\bibitem{neuronpedia} Neuronpedia. Pre-fitted Jacobian lenses for open models. \url{https://huggingface.co/neuronpedia/jacobian-lens}, 2026.
+\bibitem{mathverify} H.~Kydl\'i\v{c}ek. Math-Verify. \url{https://github.com/huggingface/math-verify}, 2025.
+\end{thebibliography}
 
 \end{document}

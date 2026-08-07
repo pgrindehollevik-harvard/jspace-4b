@@ -7,7 +7,7 @@ Two measures of different scales -> two panels sharing the rung axis (never dual
 Colors: validated categorical slots (blue #2a78d6 = J-space, orange #eb6834 = random);
 identity is double-encoded by legend + direct labels on the top rung.
 
-Usage: .venv/bin/python -m hw0.fig_ladder   (writes results/figures/ladder.pdf/.png)
+Usage: .venv/bin/python -m jspace.fig_ladder   (writes results/figures/ladder.pdf/.png)
 """
 
 import json
