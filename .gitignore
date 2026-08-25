@@ -1,5 +1,7 @@
 .venv/
 vendor/
+.hf/
+logs/
 __pycache__/
 *.pyc
 .DS_Store

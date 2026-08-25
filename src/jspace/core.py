@@ -6,6 +6,8 @@ outputs via ActivationRecorder). Band (a, b) means blocks a..b inclusive.
 """
 
 from dataclasses import dataclass
+import os
+import sys
 
 import torch
 import transformers
@@ -63,14 +65,95 @@ class Setup:
         return self.hf.lm_head
 
 
-def load(device: str = "mps", dtype=torch.bfloat16) -> Setup:
-    import os
+def resolve_device(device: str | None = None) -> str:
+    """Choose an accelerator, preferring an explicit choice or CUDA over MPS.
+
+    ``JSPACE_DEVICE`` is deliberately an environment variable rather than a
+    hard-coded platform default so the same checked-in command can run on an
+    ORCD CUDA node and on an Apple Silicon laptop.  A requested unavailable
+    backend fails early with a useful message instead of silently falling back
+    to CPU for a multi-hour experiment.
+    """
+    requested = device or os.environ.get("JSPACE_DEVICE")
+    if requested:
+        requested = requested.lower()
+        if requested.startswith("cuda") and not torch.cuda.is_available():
+            raise RuntimeError("JSPACE_DEVICE requests CUDA, but CUDA is unavailable")
+        if requested == "mps" and not torch.backends.mps.is_available():
+            raise RuntimeError("JSPACE_DEVICE requests MPS, but MPS is unavailable")
+        if requested not in {"cpu", "mps"} and not requested.startswith("cuda"):
+            raise ValueError(f"unsupported JSPACE_DEVICE={requested!r}")
+        return requested
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
+def configured_lens_path() -> str | None:
+    """Return a locally fitted lens selected by the stable public env var.
+
+    ``HW0_LENS_PATH`` is accepted only as a backwards-compatible alias for
+    archived scripts written before the project was renamed from ``hw0`` to
+    ``jspace``.  If both are set they must identify the same file, which avoids
+    accidentally running a calibration under an ambiguous lens configuration.
+    """
+    stable = os.environ.get("JSPACE_LENS_PATH")
+    legacy = os.environ.get("HW0_LENS_PATH")
+    if stable and legacy and os.path.abspath(stable) != os.path.abspath(legacy):
+        raise RuntimeError(
+            "JSPACE_LENS_PATH and legacy HW0_LENS_PATH disagree; set only one"
+        )
+    return stable or legacy
+
+
+def using_local_lens() -> bool:
+    return configured_lens_path() is not None
+
+
+def empty_accelerator_cache(device: str | None = None) -> None:
+    """Release cacheable allocator blocks without assuming a particular backend."""
+    selected = resolve_device(device)
+    if selected.startswith("cuda"):
+        torch.cuda.empty_cache()
+    elif selected == "mps":
+        torch.mps.empty_cache()
+
+
+def accelerator_memory_gb(device: str | None = None) -> tuple[str, float]:
+    """Return a compact backend-specific allocated-memory measurement."""
+    selected = resolve_device(device)
+    if selected.startswith("cuda"):
+        return "cuda", torch.cuda.memory_allocated() / 1e9
+    if selected == "mps":
+        return "mps", torch.mps.current_allocated_memory() / 1e9
+    return "cpu", 0.0
+
+
+def process_rss_gb() -> float:
+    """Maximum resident set size with the platform units normalised to bytes."""
+    import resource
+
+    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    # macOS reports bytes; Linux reports KiB.
+    return (rss if sys.platform == "darwin" else rss * 1024) / 1e9
+
+
+def load(device: str | None = None, dtype: torch.dtype | None = None) -> Setup:
+    device = resolve_device(device)
+    if dtype is None:
+        # CPU bfloat16 support is inconsistent across the operations used by
+        # the intervention. CPU is only a fallback, so prioritise correctness.
+        dtype = torch.float32 if device == "cpu" else torch.bfloat16
     hf = transformers.AutoModelForCausalLM.from_pretrained(MODEL_NAME, dtype=dtype).to(device)
+    hf.eval()
     tok = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
     model = jlens.from_hf(hf, tok)
-    # HW0_LENS_PATH selects a locally fitted lens (the prereg 5.7 penultimate-target
-    # contingency) instead of the pre-fitted hub artifact.
-    local = os.environ.get("HW0_LENS_PATH")
+    # A local path selects the penultimate-target contingency lens instead of
+    # the pre-fitted Hub artifact.  See configured_lens_path() for the legacy
+    # compatibility rule.
+    local = configured_lens_path()
     if local:
         lens = jlens.JacobianLens.load(local)
     else:

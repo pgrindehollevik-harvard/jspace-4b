@@ -24,7 +24,7 @@ from jspace.core import jlens_data_dir
 
 ORDER_OPS = f"{jlens_data_dir()}/data/evaluations/lens-eval-order-ops.json"
 MULTIHOP = f"{jlens_data_dir()}/data/evaluations/lens-eval-multihop.json"
-OUT = ("results/lens_validation_pen.json" if __import__("os").environ.get("JSPACE_LENS_PATH")
+OUT = ("results/lens_validation_pen.json" if core.using_local_lens()
        else "results/lens_validation.json")
 KS = (1, 5, 10)
 

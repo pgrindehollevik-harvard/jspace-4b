@@ -18,6 +18,7 @@ import transformers
 import jlens
 from jlens.examples import load_wikitext_prompts
 
+from jspace import core
 from jspace.core import MODEL_NAME
 
 OUT_DIR = "results/lens_fit"
@@ -31,8 +32,11 @@ def main():
     import faulthandler
     faulthandler.enable()
     os.makedirs(OUT_DIR, exist_ok=True)
+    device = core.resolve_device()
+    dtype = torch.float32 if device == "cpu" else torch.bfloat16
     hf = transformers.AutoModelForCausalLM.from_pretrained(
-        MODEL_NAME, dtype=torch.bfloat16).to("mps")
+        MODEL_NAME, dtype=dtype).to(device)
+    hf.eval()
     tok = transformers.AutoTokenizer.from_pretrained(MODEL_NAME)
     model = jlens.from_hf(hf, tok)
     prompts = load_wikitext_prompts(N_PROMPTS)

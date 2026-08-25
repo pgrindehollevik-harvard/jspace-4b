@@ -170,7 +170,7 @@ def main():
                             if abl is not None:
                                 abl.enabled = False
                                 abl.pop_norm_summary()
-                            torch.mps.empty_cache()
+                            core.empty_accelerator_cache()
                             time.sleep(10)
                         finally:
                             if abl is not None:

@@ -14,16 +14,15 @@ random-control drop; the ladder (k=5, light band) applies only if no candidate p
 If every rung fails, the main grid must not run.
 
 Every expensive stage checkpoints to results/calibration_state.json, so a crash (or an
-OOM kill — observed twice on this 48GB machine) restarts from a clean process with the
-finished stages loaded. torch.mps.empty_cache() runs between stages; memory telemetry is
-printed with each progress line.
+OOM kill — observed twice on the original 48GB MPS machine) restarts from a clean
+process with the finished stages loaded. The appropriate accelerator cache is emptied
+between stages; memory telemetry is printed with each progress line.
 
 Usage: .venv/bin/python -u -m jspace.calibrate     (writes results/calibration.json)
 """
 
 import json
 import os
-import resource
 import time
 
 import torch
@@ -38,9 +37,9 @@ from jspace.core import jlens_data_dir
 
 MULTIHOP = f"{jlens_data_dir()}/data/evaluations/lens-eval-multihop.json"
 ORDER_OPS = f"{jlens_data_dir()}/data/evaluations/lens-eval-order-ops.json"
-# A locally fitted lens (JSPACE_LENS_PATH) gets its own namespaced ladder run, so the
-# original verdict's provenance is preserved.
-_SUFFIX = "_pen" if os.environ.get("JSPACE_LENS_PATH") else ""
+# A locally fitted lens gets its own namespaced ladder run, so the original verdict's
+# provenance is preserved. core also accepts the historical HW0_LENS_PATH alias.
+_SUFFIX = "_pen" if core.using_local_lens() else ""
 OUT = f"results/calibration{_SUFFIX}.json"
 STATE = f"results/calibration_state{_SUFFIX}.json"
 
@@ -49,9 +48,8 @@ NEAR_CEILING = 0.90
 
 
 def mem() -> str:
-    rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1e9
-    mps = torch.mps.current_allocated_memory() / 1e9
-    return f"rss={rss:.1f}G mps={mps:.1f}G"
+    backend, allocated = core.accelerator_memory_gb()
+    return f"rss={core.process_rss_gb():.1f}G {backend}={allocated:.1f}G"
 
 
 def load_state() -> dict:
@@ -65,7 +63,7 @@ def stage(state: dict, key: str, fn):
     if key not in state:
         state[key] = fn()
         json.dump(state, open(STATE, "w"))
-        torch.mps.empty_cache()
+        core.empty_accelerator_cache()
         print(f"stage[{key}] done ({mem()})", flush=True)
     else:
         print(f"stage[{key}] loaded from checkpoint", flush=True)
