@@ -32,6 +32,7 @@ from jspace.ablation import JSpaceAblator
 from jspace.data import load_gsm8k, load_wikitext_heldout
 from jspace.generate import generate, generate_resumable
 from jspace.grading import max_ngram_repetition
+from jspace.stats import mcnemar_exact_p
 
 from jspace.core import jlens_data_dir
 
@@ -131,18 +132,6 @@ def degenerate_rate(setup, problems, ablator, state, key) -> tuple[float, float]
             print(f"  degen {i}/{len(problems)} ({mem()})", flush=True)
     return sum(partial["flags"]) / len(partial["flags"]), (
         partial["toks"] / max(partial["secs"], 1e-9))
-
-
-def mcnemar_exact_p(hits_a: list[bool], hits_b: list[bool]) -> float:
-    """Exact McNemar (paired, two-sided) on per-item hit lists (deviation 3)."""
-    from math import comb
-    b = sum(1 for x, y in zip(hits_a, hits_b) if x and not y)
-    c = sum(1 for x, y in zip(hits_a, hits_b) if not x and y)
-    n = b + c
-    if n == 0:
-        return 1.0
-    tail = sum(comb(n, x) for x in range(min(b, c) + 1)) / 2 ** n
-    return min(1.0, 2 * tail)
 
 
 def evaluate_rung(setup, state, items, pilot, wiki, clean_hits, band, k) -> dict:

@@ -21,7 +21,6 @@ import torch
 
 from jspace import core
 from jspace.ablation import JSpaceAblator
-from jspace.calibrate import mcnemar_exact_p
 from jspace.generate import generate, generate_resumable
 from jspace.grading import max_ngram_repetition
 from jspace.profiles import LENS_REVISION, get_profile
@@ -34,6 +33,7 @@ from jspace.scale_config import (
 )
 from jspace.scale_data import load_staged_data
 from jspace.scale_runtime import load_scale_setup
+from jspace.stats import mcnemar_exact_p
 from jspace.validate_lens import KS, best_rank, single_token_ids, synonyms
 
 
