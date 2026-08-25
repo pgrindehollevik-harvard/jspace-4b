@@ -11,9 +11,13 @@ import torch
 from jspace import core
 from jspace.ablation import JSpaceAblator
 from jspace.generate import generate
-from jspace.scale_config import confirmatory_profiles, load_scale_config, transferred_band
-from jspace.scale_runtime import load_scale_setup
 from jspace.profiles import get_profile
+from jspace.scale_config import (
+    confirmatory_profiles,
+    load_scale_config,
+    transferred_band,
+)
+from jspace.scale_runtime import load_scale_setup
 
 
 def main() -> None:

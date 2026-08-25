@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import os
 
+import jlens
 import torch
 import transformers
-
-import jlens
 
 from jspace import core
 from jspace.profiles import LENS_REPO, LENS_REVISION, get_profile

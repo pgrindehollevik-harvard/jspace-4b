@@ -11,11 +11,9 @@ import csv
 import json
 import math
 import random
-from pathlib import Path
 
 from jspace.scale_config import REPO_ROOT, load_scale_config
 from jspace.stats import mcnemar_exact_p
-
 
 BOOTSTRAP_SEED = 20260825
 N_BOOTSTRAP = 10_000

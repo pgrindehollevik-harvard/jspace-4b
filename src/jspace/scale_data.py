@@ -11,7 +11,6 @@ from pathlib import Path
 from jspace.data import load_gsm8k, load_wikitext_heldout
 from jspace.scale_config import REPO_ROOT, config_sha256, load_scale_config
 
-
 DEFAULT_CACHE = REPO_ROOT / ".scale-cache" / "v2_data.json"
 
 
