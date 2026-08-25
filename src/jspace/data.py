@@ -19,8 +19,8 @@ def gsm8k_answer(sol: str) -> str:
     return sol.split("####")[-1].strip().replace(",", "")
 
 
-def load_gsm8k(n=150, seed=0, split="test"):
-    ds = load_dataset("openai/gsm8k", "main", split=split)
+def load_gsm8k(n=150, seed=0, split="test", revision=None):
+    ds = load_dataset("openai/gsm8k", "main", split=split, revision=revision)
     idx = random.Random(seed).sample(range(len(ds)), n)
     return [{"id": f"gsm8k-{split}-{i}", "dataset": "gsm8k", "level": 0,
              "problem": ds[i]["question"], "answer": gsm8k_answer(ds[i]["answer"])}
@@ -54,10 +54,11 @@ def load_aime():
     return items
 
 
-def load_wikitext_heldout(n=50, min_chars=600, skip=2000, max_chars=2000):
+def load_wikitext_heldout(n=50, min_chars=600, skip=2000, max_chars=2000,
+                          revision=None):
     """Selectivity-control sequences, drawn far past the lens's fitting region."""
     ds = load_dataset("Salesforce/wikitext", "wikitext-103-raw-v1",
-                      split="train", streaming=True)
+                      split="train", streaming=True, revision=revision)
     out, seen = [], 0
     for row in ds:
         text = row["text"].strip()

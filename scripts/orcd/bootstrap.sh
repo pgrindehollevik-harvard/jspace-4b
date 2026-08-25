@@ -25,6 +25,21 @@ else
   git clone --branch "$REF" "$REPO_URL" "$ROOT"
 fi
 
+# The public checkout tracks vendor as a sibling-repository symlink.  Create
+# its resolved target before cloning the nested companion checkout so this
+# also works in a fresh scratch directory where that target is absent.
+VENDOR_DIR="$ROOT/vendor"
+if [[ -L "$VENDOR_DIR" ]]; then
+  VENDOR_TARGET="$(readlink "$VENDOR_DIR")"
+  if [[ "$VENDOR_TARGET" = /* ]]; then
+    mkdir -p "$VENDOR_TARGET"
+  else
+    mkdir -p "$ROOT/$VENDOR_TARGET"
+  fi
+else
+  mkdir -p "$VENDOR_DIR"
+fi
+
 if [[ -d "$ROOT/vendor/jacobian-lens/.git" ]]; then
   git -C "$ROOT/vendor/jacobian-lens" fetch origin "$JLENS_REV"
 else

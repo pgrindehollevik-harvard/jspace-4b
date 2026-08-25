@@ -1,5 +1,10 @@
 # Does Chain-of-Thought Still Protect Against J-Space Ablation When Problems Get Hard?
 
+> **2026 scale extension:** the archived Qwen3-4B study below remains unchanged. A
+> preregistered, fixed-band 8B/14B measurement-validity extension lives in
+> [`extension/PREREGISTRATION.md`](extension/PREREGISTRATION.md); its isolated ORCD
+> workflow is documented in [`docs/ORCD.md`](docs/ORCD.md).
+
 **Peter Flo** (Harvard University) · [paper (pdf)](paper.pdf) · [blog post](https://pflo.org/jspace-4b.html) · abstract accepted at [NEMI 2026](https://nemiconf.github.io/summer26/)
 
 A pre-registered replication and extension of the J-space ablation experiments from

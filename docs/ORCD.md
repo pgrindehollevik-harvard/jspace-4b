@@ -1,8 +1,8 @@
 # ORCD readiness and job procedure
 
-This document prepares the **infrastructure** for the Qwen3 scaling extension. It does
-not start a new scientific run. The extension needs a version-2 pre-registration before
-we select model-specific bands or submit a calibration ladder.
+This document prepares the **infrastructure** for the Qwen3 scaling extension. The
+version-2 design is now isolated in `extension/PREREGISTRATION.md` and deliberately has
+no model-specific calibration ladder: it transfers one fixed band to 8B and 14B.
 
 ## What is confirmed and what is not
 
@@ -112,3 +112,37 @@ available, accepts `JSPACE_DEVICE=cuda`, uses backend-appropriate cache/memory c
 and standardizes on `JSPACE_LENS_PATH` while retaining `HW0_LENS_PATH` solely for the
 historical archived supervisor. The existing result JSONs and paper are intentionally
 unchanged.
+
+## 4. Version-2 fixed scale gate
+
+Do not submit the scientific job from an uncommitted worktree. After the v2
+preregistration, config, and runner are frozen in git, stage each pinned public profile
+and the exact public-data subset from the login node:
+
+```bash
+cd "$HOME/orcd/scratch/jspace-4b"
+scripts/orcd/stage_assets.sh qwen3-8b
+scripts/orcd/stage_assets.sh qwen3-14b
+scripts/orcd/stage_scale_data.sh
+```
+
+Run the engineering-only compatibility jobs first. They do not inspect a registered
+dataset or write a result artifact:
+
+```bash
+sbatch --export=ALL,JSPACE_PROFILE=qwen3-8b scripts/orcd/scale_smoke.sbatch
+sbatch --export=ALL,JSPACE_PROFILE=qwen3-14b scripts/orcd/scale_smoke.sbatch
+```
+
+Only after both smoke logs have been checked, submit the bounded, checkpointed gates:
+
+```bash
+sbatch --export=ALL,JSPACE_PROFILE=qwen3-8b scripts/orcd/scale_gate.sbatch
+sbatch --export=ALL,JSPACE_PROFILE=qwen3-14b scripts/orcd/scale_gate.sbatch
+```
+
+The runner writes checkpoints below ignored `extension/state/` and final v2 artifacts
+below `extension/results/<profile>/`; it never modifies the archived `results/` files.
+If an L40S OOMs before producing a metric, the preregistration permits an unchanged H200
+retry with `sbatch -G h200:1 ...`. No other result-dependent resource or design change is
+permitted without a logged deviation.

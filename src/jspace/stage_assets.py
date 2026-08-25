@@ -16,17 +16,14 @@ from pathlib import Path
 
 from huggingface_hub import hf_hub_download, snapshot_download
 
-from jspace.profiles import LENS_REPO, QWEN3_PROFILES, get_profile
+from jspace.profiles import LENS_REPO, LENS_REVISION, QWEN3_PROFILES, get_profile
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", choices=sorted(QWEN3_PROFILES), required=True)
-    parser.add_argument(
-        "--revision",
-        default=None,
-        help="optional Hugging Face revision to record and use for both artifacts",
-    )
+    parser.add_argument("--model-revision", default=None)
+    parser.add_argument("--lens-revision", default=None)
     args = parser.parse_args()
     profile = get_profile(args.model)
 
@@ -35,10 +32,12 @@ def main() -> None:
         Path(hf_home).mkdir(parents=True, exist_ok=True)
 
     print(f"staging model {profile.model_id}", flush=True)
-    model_path = snapshot_download(profile.model_id, revision=args.revision)
+    model_revision = args.model_revision or profile.model_revision
+    lens_revision = args.lens_revision or LENS_REVISION
+    model_path = snapshot_download(profile.model_id, revision=model_revision)
     print(f"staging lens {LENS_REPO}:{profile.lens_file}", flush=True)
     lens_path = hf_hub_download(
-        LENS_REPO, profile.lens_file, revision=args.revision
+        LENS_REPO, profile.lens_file, revision=lens_revision
     )
     print(json.dumps({
         "profile": profile.key,
@@ -47,7 +46,8 @@ def main() -> None:
         "lens_file": profile.lens_file,
         "lens_path": lens_path,
         "hf_home": hf_home,
-        "revision": args.revision or "main",
+        "model_revision": model_revision,
+        "lens_revision": lens_revision,
     }, indent=2), flush=True)
 
 

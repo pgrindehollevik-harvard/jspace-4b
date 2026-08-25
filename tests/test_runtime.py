@@ -3,7 +3,8 @@
 import pytest
 
 from jspace import core
-from jspace.profiles import get_profile
+from jspace.profiles import LENS_REVISION, get_profile
+from jspace.scale_config import confirmatory_profiles, transferred_band
 
 
 def test_cpu_can_be_requested_explicitly(monkeypatch):
@@ -35,3 +36,15 @@ def test_qwen32_profile_has_expected_shape_and_lens():
     assert profile.n_layers == 64
     assert profile.hidden_size == 5120
     assert profile.lens_file.endswith("Qwen3-32B_jacobian_lens.pt")
+
+
+def test_scale_profiles_and_bands_are_frozen():
+    assert set(confirmatory_profiles()) == {"qwen3-8b", "qwen3-14b"}
+    assert transferred_band(get_profile("qwen3-8b").n_layers) == (14, 19)
+    assert transferred_band(get_profile("qwen3-14b").n_layers) == (15, 21)
+
+
+def test_scale_artifacts_are_commit_pinned():
+    assert len(LENS_REVISION) == 40
+    for key in confirmatory_profiles():
+        assert len(get_profile(key).model_revision) == 40

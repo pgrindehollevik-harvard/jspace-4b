@@ -1,6 +1,7 @@
 .venv/
 vendor/
 .hf/
+.scale-cache/
 logs/
 __pycache__/
 *.pyc
@@ -10,6 +11,7 @@ checkpoints/
 logs/
 results/partials/
 results/lens_fit/
+extension/state/
 *.tmp.*
 report/*.aux
 report/*.log
